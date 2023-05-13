@@ -931,257 +931,257 @@ void show_dprogress( const unsigned long long cfile_size,
   }
 
 
-int main( const int argc, const char * const argv[] )
-  {
-  /* Mapping from gzip/bzip2 style 1..9 compression modes
-     to the corresponding LZMA compression modes. */
-  const struct Lzma_options option_mapping[] =
-    {
-    { 1 << 16,  16 },		/* -0 */
-    { 1 << 20,   5 },		/* -1 */
-    { 3 << 19,   6 },		/* -2 */
-    { 1 << 21,   8 },		/* -3 */
-    { 3 << 20,  12 },		/* -4 */
-    { 1 << 22,  20 },		/* -5 */
-    { 1 << 23,  36 },		/* -6 */
-    { 1 << 24,  68 },		/* -7 */
-    { 3 << 23, 132 },		/* -8 */
-    { 1 << 25, 273 } };		/* -9 */
-  struct Lzma_options encoder_options = option_mapping[6];  /* default = "-6" */
-  const unsigned long long max_member_size = 0x0008000000000000ULL; /* 2 PiB */
-  const unsigned long long max_volume_size = 0x4000000000000000ULL; /* 4 EiB */
-  unsigned long long member_size = max_member_size;
-  unsigned long long volume_size = 0;
-  const char * default_output_filename = "";
-  enum Mode program_mode = m_compress;
-  int i;
-  bool force = false;
-  bool ignore_trailing = true;
-  bool keep_input_files = false;
-  bool loose_trailing = false;
-  bool recompress = false;
-  bool to_stdout = false;
-  bool zero = false;
-  if( argc > 0 ) invocation_name = argv[0];
-
-  enum { opt_lt = 256 };
-  const struct ap_Option options[] =
-    {
-    { '0', "fast",              ap_no  },
-    { '1', 0,                   ap_no  },
-    { '2', 0,                   ap_no  },
-    { '3', 0,                   ap_no  },
-    { '4', 0,                   ap_no  },
-    { '5', 0,                   ap_no  },
-    { '6', 0,                   ap_no  },
-    { '7', 0,                   ap_no  },
-    { '8', 0,                   ap_no  },
-    { '9', "best",              ap_no  },
-    { 'a', "trailing-error",    ap_no  },
-    { 'b', "member-size",       ap_yes },
-    { 'c', "stdout",            ap_no  },
-    { 'd', "decompress",        ap_no  },
-    { 'f', "force",             ap_no  },
-    { 'F', "recompress",        ap_no  },
-    { 'h', "help",              ap_no  },
-    { 'k', "keep",              ap_no  },
-    { 'l', "list",              ap_no  },
-    { 'm', "match-length",      ap_yes },
-    { 'n', "threads",           ap_yes },
-    { 'o', "output",            ap_yes },
-    { 'q', "quiet",             ap_no  },
-    { 's', "dictionary-size",   ap_yes },
-    { 'S', "volume-size",       ap_yes },
-    { 't', "test",              ap_no  },
-    { 'v', "verbose",           ap_no  },
-    { 'V', "version",           ap_no  },
-    { opt_lt, "loose-trailing", ap_no  },
-    {  0, 0,                    ap_no  } };
-
-  CRC32_init();
-
-  /* static because valgrind complains and memory management in C sucks */
-  static struct Arg_parser parser;
-  if( !ap_init( &parser, argc, argv, options, 0 ) )
-    { show_error( mem_msg, 0, false ); return 1; }
-  if( ap_error( &parser ) )				/* bad option */
-    { show_error( ap_error( &parser ), 0, true ); return 1; }
-
-  int argind = 0;
-  for( ; argind < ap_arguments( &parser ); ++argind )
-    {
-    const int code = ap_code( &parser, argind );
-    if( !code ) break;					/* no more options */
-    const char * const pn = ap_parsed_name( &parser, argind );
-    const char * const arg = ap_argument( &parser, argind );
-    switch( code )
-      {
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-                zero = ( code == '0' );
-                encoder_options = option_mapping[code-'0']; break;
-      case 'a': ignore_trailing = false; break;
-      case 'b': member_size = getnum( arg, pn, 100000, max_member_size ); break;
-      case 'c': to_stdout = true; break;
-      case 'd': set_mode( &program_mode, m_decompress ); break;
-      case 'f': force = true; break;
-      case 'F': recompress = true; break;
-      case 'h': show_help(); return 0;
-      case 'k': keep_input_files = true; break;
-      case 'l': set_mode( &program_mode, m_list ); break;
-      case 'm': encoder_options.match_len_limit =
-                  getnum( arg, pn, min_match_len_limit, max_match_len );
-                zero = false; break;
-      case 'n': break;
-      case 'o': if( strcmp( arg, "-" ) == 0 ) to_stdout = true;
-                else { default_output_filename = arg; } break;
-      case 'q': verbosity = -1; break;
-      case 's': encoder_options.dictionary_size = get_dict_size( arg, pn );
-                zero = false; break;
-      case 'S': volume_size = getnum( arg, pn, 100000, max_volume_size ); break;
-      case 't': set_mode( &program_mode, m_test ); break;
-      case 'v': if( verbosity < 4 ) ++verbosity; break;
-      case 'V': show_version(); return 0;
-      case opt_lt: loose_trailing = true; break;
-      default : internal_error( "uncaught option." );
-      }
-    } /* end process options */
-
-#if defined __MSVCRT__ || defined __OS2__ || defined __DJGPP__
-  setmode( STDIN_FILENO, O_BINARY );
-  setmode( STDOUT_FILENO, O_BINARY );
-#endif
-
-  static const char ** filenames = 0;
-  int num_filenames = max( 1, ap_arguments( &parser ) - argind );
-  filenames = resize_buffer( filenames, num_filenames * sizeof filenames[0] );
-  filenames[0] = "-";
-
-  bool filenames_given = false;
-  for( i = 0; argind + i < ap_arguments( &parser ); ++i )
-    {
-    filenames[i] = ap_argument( &parser, argind + i );
-    if( strcmp( filenames[i], "-" ) != 0 ) filenames_given = true;
-    }
-
-  if( program_mode == m_list )
-    return list_files( filenames, num_filenames, ignore_trailing, loose_trailing );
-
-  if( program_mode == m_compress )
-    {
-    if( volume_size > 0 && !to_stdout && default_output_filename[0] &&
-        num_filenames > 1 )
-      { show_error( "Only can compress one file when using '-o' and '-S'.",
-                    0, true ); return 1; }
-    Dis_slots_init();
-    Prob_prices_init();
-    }
-  else volume_size = 0;
-  if( program_mode == m_test ) to_stdout = false;	/* apply overrides */
-  if( program_mode == m_test || to_stdout ) default_output_filename = "";
-
-  output_filename = resize_buffer( output_filename, 1 );
-  output_filename[0] = 0;
-  if( to_stdout && program_mode != m_test )	/* check tty only once */
-    { outfd = STDOUT_FILENO; if( !check_tty_out( program_mode ) ) return 1; }
-  else outfd = -1;
-
-  const bool to_file = !to_stdout && program_mode != m_test &&
-                       default_output_filename[0];
-  if( !to_stdout && program_mode != m_test && ( filenames_given || to_file ) )
-    set_signals( signal_handler );
-
-  static struct Pretty_print pp;
-  Pp_init( &pp, filenames, num_filenames );
-
-  int failed_tests = 0;
-  int retval = 0;
-  const bool one_to_one = !to_stdout && program_mode != m_test && !to_file;
-  bool stdin_used = false;
-  for( i = 0; i < num_filenames; ++i )
-    {
-    const char * input_filename = "";
-    int infd;
-    struct stat in_stats;
-
-    Pp_set_name( &pp, filenames[i] );
-    if( strcmp( filenames[i], "-" ) == 0 )
-      {
-      if( stdin_used ) continue; else stdin_used = true;
-      infd = STDIN_FILENO;
-      if( !check_tty_in( pp.name, infd, program_mode, &retval ) ) continue;
-      if( one_to_one ) { outfd = STDOUT_FILENO; output_filename[0] = 0; }
-      }
-    else
-      {
-      const int eindex = extension_index( input_filename = filenames[i] );
-      infd = open_instream2( input_filename, &in_stats, program_mode,
-                             eindex, one_to_one, recompress );
-      if( infd < 0 ) { set_retval( &retval, 1 ); continue; }
-      if( !check_tty_in( pp.name, infd, program_mode, &retval ) ) continue;
-      if( one_to_one )			/* open outfd after verifying infd */
-        {
-        if( program_mode == m_compress )
-          set_c_outname( input_filename, true, true, volume_size > 0 );
-        else set_d_outname( input_filename, eindex );
-        if( !open_outstream( force, true ) )
-          { close( infd ); set_retval( &retval, 1 ); continue; }
-        }
-      }
-
-    if( one_to_one && !check_tty_out( program_mode ) )
-      { set_retval( &retval, 1 ); return retval; }	/* don't delete a tty */
-
-    if( to_file && outfd < 0 )		/* open outfd after verifying infd */
-      {
-      if( program_mode == m_compress ) set_c_outname( default_output_filename,
-                                       filenames_given, false, volume_size > 0 );
-      else
-        { output_filename = resize_buffer( output_filename,
-                            strlen( default_output_filename ) + 1 );
-          strcpy( output_filename, default_output_filename ); }
-      if( !open_outstream( force, false ) || !check_tty_out( program_mode ) )
-        return 1;	/* check tty only once and don't try to delete a tty */
-      }
-
-    const struct stat * const in_statsp =
-      ( input_filename[0] && one_to_one ) ? &in_stats : 0;
-    const unsigned long long cfile_size =
-      ( input_filename[0] && S_ISREG( in_stats.st_mode ) ) ?
-        ( in_stats.st_size + 99 ) / 100 : 0;
-    int tmp;
-    if( program_mode == m_compress )
-      tmp = compress( cfile_size, member_size, volume_size, infd,
-                      &encoder_options, &pp, in_statsp, zero );
-    else
-      tmp = decompress( cfile_size, infd, &pp, ignore_trailing,
-                        loose_trailing, program_mode == m_test );
-    if( close( infd ) != 0 )
-      { show_file_error( pp.name, "Error closing input file", errno );
-        set_retval( &tmp, 1 ); }
-    set_retval( &retval, tmp );
-    if( tmp )
-      { if( program_mode != m_test ) cleanup_and_fail( retval );
-        else ++failed_tests; }
-
-    if( delete_output_on_interrupt && one_to_one )
-      close_and_set_permissions( in_statsp );
-    if( input_filename[0] && !keep_input_files && one_to_one &&
-        ( program_mode != m_compress || volume_size == 0 ) )
-      remove( input_filename );
-    }
-  if( delete_output_on_interrupt ) close_and_set_permissions( 0 );	/* -o */
-  else if( outfd >= 0 && close( outfd ) != 0 )				/* -c */
-    {
-    show_error( "Error closing stdout", errno, false );
-    set_retval( &retval, 1 );
-    }
-  if( failed_tests > 0 && verbosity >= 1 && num_filenames > 1 )
-    fprintf( stderr, "%s: warning: %d %s failed the test.\n",
-             program_name, failed_tests,
-             ( failed_tests == 1 ) ? "file" : "files" );
-  free( output_filename );
-  free( filenames );
-  ap_free( &parser );
-  return retval;
-  }
+//int main( const int argc, const char * const argv[] )
+//  {
+//  /* Mapping from gzip/bzip2 style 1..9 compression modes
+//     to the corresponding LZMA compression modes. */
+//  const struct Lzma_options option_mapping[] =
+//    {
+//    { 1 << 16,  16 },		/* -0 */
+//    { 1 << 20,   5 },		/* -1 */
+//    { 3 << 19,   6 },		/* -2 */
+//    { 1 << 21,   8 },		/* -3 */
+//    { 3 << 20,  12 },		/* -4 */
+//    { 1 << 22,  20 },		/* -5 */
+//    { 1 << 23,  36 },		/* -6 */
+//    { 1 << 24,  68 },		/* -7 */
+//    { 3 << 23, 132 },		/* -8 */
+//    { 1 << 25, 273 } };		/* -9 */
+//  struct Lzma_options encoder_options = option_mapping[6];  /* default = "-6" */
+//  const unsigned long long max_member_size = 0x0008000000000000ULL; /* 2 PiB */
+//  const unsigned long long max_volume_size = 0x4000000000000000ULL; /* 4 EiB */
+//  unsigned long long member_size = max_member_size;
+//  unsigned long long volume_size = 0;
+//  const char * default_output_filename = "";
+//  enum Mode program_mode = m_compress;
+//  int i;
+//  bool force = false;
+//  bool ignore_trailing = true;
+//  bool keep_input_files = false;
+//  bool loose_trailing = false;
+//  bool recompress = false;
+//  bool to_stdout = false;
+//  bool zero = false;
+//  if( argc > 0 ) invocation_name = argv[0];
+//
+//  enum { opt_lt = 256 };
+//  const struct ap_Option options[] =
+//    {
+//    { '0', "fast",              ap_no  },
+//    { '1', 0,                   ap_no  },
+//    { '2', 0,                   ap_no  },
+//    { '3', 0,                   ap_no  },
+//    { '4', 0,                   ap_no  },
+//    { '5', 0,                   ap_no  },
+//    { '6', 0,                   ap_no  },
+//    { '7', 0,                   ap_no  },
+//    { '8', 0,                   ap_no  },
+//    { '9', "best",              ap_no  },
+//    { 'a', "trailing-error",    ap_no  },
+//    { 'b', "member-size",       ap_yes },
+//    { 'c', "stdout",            ap_no  },
+//    { 'd', "decompress",        ap_no  },
+//    { 'f', "force",             ap_no  },
+//    { 'F', "recompress",        ap_no  },
+//    { 'h', "help",              ap_no  },
+//    { 'k', "keep",              ap_no  },
+//    { 'l', "list",              ap_no  },
+//    { 'm', "match-length",      ap_yes },
+//    { 'n', "threads",           ap_yes },
+//    { 'o', "output",            ap_yes },
+//    { 'q', "quiet",             ap_no  },
+//    { 's', "dictionary-size",   ap_yes },
+//    { 'S', "volume-size",       ap_yes },
+//    { 't', "test",              ap_no  },
+//    { 'v', "verbose",           ap_no  },
+//    { 'V', "version",           ap_no  },
+//    { opt_lt, "loose-trailing", ap_no  },
+//    {  0, 0,                    ap_no  } };
+//
+//  CRC32_init();
+//
+//  /* static because valgrind complains and memory management in C sucks */
+//  static struct Arg_parser parser;
+//  if( !ap_init( &parser, argc, argv, options, 0 ) )
+//    { show_error( mem_msg, 0, false ); return 1; }
+//  if( ap_error( &parser ) )				/* bad option */
+//    { show_error( ap_error( &parser ), 0, true ); return 1; }
+//
+//  int argind = 0;
+//  for( ; argind < ap_arguments( &parser ); ++argind )
+//    {
+//    const int code = ap_code( &parser, argind );
+//    if( !code ) break;					/* no more options */
+//    const char * const pn = ap_parsed_name( &parser, argind );
+//    const char * const arg = ap_argument( &parser, argind );
+//    switch( code )
+//      {
+//      case '0': case '1': case '2': case '3': case '4':
+//      case '5': case '6': case '7': case '8': case '9':
+//                zero = ( code == '0' );
+//                encoder_options = option_mapping[code-'0']; break;
+//      case 'a': ignore_trailing = false; break;
+//      case 'b': member_size = getnum( arg, pn, 100000, max_member_size ); break;
+//      case 'c': to_stdout = true; break;
+//      case 'd': set_mode( &program_mode, m_decompress ); break;
+//      case 'f': force = true; break;
+//      case 'F': recompress = true; break;
+//      case 'h': show_help(); return 0;
+//      case 'k': keep_input_files = true; break;
+//      case 'l': set_mode( &program_mode, m_list ); break;
+//      case 'm': encoder_options.match_len_limit =
+//                  getnum( arg, pn, min_match_len_limit, max_match_len );
+//                zero = false; break;
+//      case 'n': break;
+//      case 'o': if( strcmp( arg, "-" ) == 0 ) to_stdout = true;
+//                else { default_output_filename = arg; } break;
+//      case 'q': verbosity = -1; break;
+//      case 's': encoder_options.dictionary_size = get_dict_size( arg, pn );
+//                zero = false; break;
+//      case 'S': volume_size = getnum( arg, pn, 100000, max_volume_size ); break;
+//      case 't': set_mode( &program_mode, m_test ); break;
+//      case 'v': if( verbosity < 4 ) ++verbosity; break;
+//      case 'V': show_version(); return 0;
+//      case opt_lt: loose_trailing = true; break;
+//      default : internal_error( "uncaught option." );
+//      }
+//    } /* end process options */
+//
+//#if defined __MSVCRT__ || defined __OS2__ || defined __DJGPP__
+//  setmode( STDIN_FILENO, O_BINARY );
+//  setmode( STDOUT_FILENO, O_BINARY );
+//#endif
+//
+//  static const char ** filenames = 0;
+//  int num_filenames = max( 1, ap_arguments( &parser ) - argind );
+//  filenames = resize_buffer( filenames, num_filenames * sizeof filenames[0] );
+//  filenames[0] = "-";
+//
+//  bool filenames_given = false;
+//  for( i = 0; argind + i < ap_arguments( &parser ); ++i )
+//    {
+//    filenames[i] = ap_argument( &parser, argind + i );
+//    if( strcmp( filenames[i], "-" ) != 0 ) filenames_given = true;
+//    }
+//
+//  if( program_mode == m_list )
+//    return list_files( filenames, num_filenames, ignore_trailing, loose_trailing );
+//
+//  if( program_mode == m_compress )
+//    {
+//    if( volume_size > 0 && !to_stdout && default_output_filename[0] &&
+//        num_filenames > 1 )
+//      { show_error( "Only can compress one file when using '-o' and '-S'.",
+//                    0, true ); return 1; }
+//    Dis_slots_init();
+//    Prob_prices_init();
+//    }
+//  else volume_size = 0;
+//  if( program_mode == m_test ) to_stdout = false;	/* apply overrides */
+//  if( program_mode == m_test || to_stdout ) default_output_filename = "";
+//
+//  output_filename = resize_buffer( output_filename, 1 );
+//  output_filename[0] = 0;
+//  if( to_stdout && program_mode != m_test )	/* check tty only once */
+//    { outfd = STDOUT_FILENO; if( !check_tty_out( program_mode ) ) return 1; }
+//  else outfd = -1;
+//
+//  const bool to_file = !to_stdout && program_mode != m_test &&
+//                       default_output_filename[0];
+//  if( !to_stdout && program_mode != m_test && ( filenames_given || to_file ) )
+//    set_signals( signal_handler );
+//
+//  static struct Pretty_print pp;
+//  Pp_init( &pp, filenames, num_filenames );
+//
+//  int failed_tests = 0;
+//  int retval = 0;
+//  const bool one_to_one = !to_stdout && program_mode != m_test && !to_file;
+//  bool stdin_used = false;
+//  for( i = 0; i < num_filenames; ++i )
+//    {
+//    const char * input_filename = "";
+//    int infd;
+//    struct stat in_stats;
+//
+//    Pp_set_name( &pp, filenames[i] );
+//    if( strcmp( filenames[i], "-" ) == 0 )
+//      {
+//      if( stdin_used ) continue; else stdin_used = true;
+//      infd = STDIN_FILENO;
+//      if( !check_tty_in( pp.name, infd, program_mode, &retval ) ) continue;
+//      if( one_to_one ) { outfd = STDOUT_FILENO; output_filename[0] = 0; }
+//      }
+//    else
+//      {
+//      const int eindex = extension_index( input_filename = filenames[i] );
+//      infd = open_instream2( input_filename, &in_stats, program_mode,
+//                             eindex, one_to_one, recompress );
+//      if( infd < 0 ) { set_retval( &retval, 1 ); continue; }
+//      if( !check_tty_in( pp.name, infd, program_mode, &retval ) ) continue;
+//      if( one_to_one )			/* open outfd after verifying infd */
+//        {
+//        if( program_mode == m_compress )
+//          set_c_outname( input_filename, true, true, volume_size > 0 );
+//        else set_d_outname( input_filename, eindex );
+//        if( !open_outstream( force, true ) )
+//          { close( infd ); set_retval( &retval, 1 ); continue; }
+//        }
+//      }
+//
+//    if( one_to_one && !check_tty_out( program_mode ) )
+//      { set_retval( &retval, 1 ); return retval; }	/* don't delete a tty */
+//
+//    if( to_file && outfd < 0 )		/* open outfd after verifying infd */
+//      {
+//      if( program_mode == m_compress ) set_c_outname( default_output_filename,
+//                                       filenames_given, false, volume_size > 0 );
+//      else
+//        { output_filename = resize_buffer( output_filename,
+//                            strlen( default_output_filename ) + 1 );
+//          strcpy( output_filename, default_output_filename ); }
+//      if( !open_outstream( force, false ) || !check_tty_out( program_mode ) )
+//        return 1;	/* check tty only once and don't try to delete a tty */
+//      }
+//
+//    const struct stat * const in_statsp =
+//      ( input_filename[0] && one_to_one ) ? &in_stats : 0;
+//    const unsigned long long cfile_size =
+//      ( input_filename[0] && S_ISREG( in_stats.st_mode ) ) ?
+//        ( in_stats.st_size + 99 ) / 100 : 0;
+//    int tmp;
+//    if( program_mode == m_compress )
+//      tmp = compress( cfile_size, member_size, volume_size, infd,
+//                      &encoder_options, &pp, in_statsp, zero );
+//    else
+//      tmp = decompress( cfile_size, infd, &pp, ignore_trailing,
+//                        loose_trailing, program_mode == m_test );
+//    if( close( infd ) != 0 )
+//      { show_file_error( pp.name, "Error closing input file", errno );
+//        set_retval( &tmp, 1 ); }
+//    set_retval( &retval, tmp );
+//    if( tmp )
+//      { if( program_mode != m_test ) cleanup_and_fail( retval );
+//        else ++failed_tests; }
+//
+//    if( delete_output_on_interrupt && one_to_one )
+//      close_and_set_permissions( in_statsp );
+//    if( input_filename[0] && !keep_input_files && one_to_one &&
+//        ( program_mode != m_compress || volume_size == 0 ) )
+//      remove( input_filename );
+//    }
+//  if( delete_output_on_interrupt ) close_and_set_permissions( 0 );	/* -o */
+//  else if( outfd >= 0 && close( outfd ) != 0 )				/* -c */
+//    {
+//    show_error( "Error closing stdout", errno, false );
+//    set_retval( &retval, 1 );
+//    }
+//  if( failed_tests > 0 && verbosity >= 1 && num_filenames > 1 )
+//    fprintf( stderr, "%s: warning: %d %s failed the test.\n",
+//             program_name, failed_tests,
+//             ( failed_tests == 1 ) ? "file" : "files" );
+//  free( output_filename );
+//  free( filenames );
+//  ap_free( &parser );
+//  return retval;
+//  }
