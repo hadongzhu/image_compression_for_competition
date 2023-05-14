@@ -1,25 +1,25 @@
 \input texinfo @c -*-texinfo-*-
 @c %**start of header
-@setfilename clzip.info
+@setfilename lzip.info
 @documentencoding ISO-8859-15
-@settitle Clzip Manual
+@settitle Lzip Manual
 @finalout
 @c %**end of header
 
 @set UPDATED 24 January 2022
-@set VERSION 1.13
+@set VERSION 1.23
 
 @dircategory Compression
 @direntry
-* Clzip: (clzip).               LZMA lossless data compressor
+* Lzip: (lzip).                 LZMA lossless data compressor
 @end direntry
 
 
 @ifnothtml
 @titlepage
-@title Clzip
+@title Lzip
 @subtitle LZMA lossless data compressor
-@subtitle for Clzip version @value{VERSION}, @value{UPDATED}
+@subtitle for Lzip version @value{VERSION}, @value{UPDATED}
 @author by Antonio Diaz Diaz
 
 @page
@@ -33,14 +33,14 @@
 @node Top
 @top
 
-This manual is for Clzip (version @value{VERSION}, @value{UPDATED}).
+This manual is for Lzip (version @value{VERSION}, @value{UPDATED}).
 
 @menu
-* Introduction::           Purpose and features of clzip
-* Output::                 Meaning of clzip's output
-* Invoking clzip::         Command line interface
+* Introduction::           Purpose and features of lzip
+* Output::                 Meaning of lzip's output
+* Invoking lzip::          Command line interface
 * Quality assurance::      Design, development, and testing of lzip
-* Algorithm::              How clzip compresses the data
+* Algorithm::              How lzip compresses the data
 * File format::            Detailed format of the compressed file
 * Stream format::          Format of the LZMA stream in lzip files
 * Trailing data::          Extra data appended to the file
@@ -51,7 +51,7 @@ This manual is for Clzip (version @value{VERSION}, @value{UPDATED}).
 @end menu
 
 @sp 1
-Copyright @copyright{} 2010-2022 Antonio Diaz Diaz.
+Copyright @copyright{} 2008-2022 Antonio Diaz Diaz.
 
 This manual is free documentation: you have unlimited permission to copy,
 distribute, and modify it.
@@ -61,12 +61,6 @@ distribute, and modify it.
 @node Introduction
 @chapter Introduction
 @cindex introduction
-
-@uref{http://www.nongnu.org/lzip/clzip.html,,Clzip}
-is a C language version of lzip, fully compatible with @w{lzip 1.4} or
-newer. As clzip is written in C, it may be easier to integrate in
-applications like package managers, embedded devices, or systems lacking a
-C++ compiler.
 
 @uref{http://www.nongnu.org/lzip/lzip.html,,Lzip}
 is a lossless data compressor with a user interface similar to the one
@@ -133,17 +127,17 @@ of the original data, and the size of the member. These values, together
 with the "End Of Stream" marker, provide a 3 factor integrity checking
 which guarantees that the decompressed version of the data is identical
 to the original. This guards against corruption of the compressed data,
-and against undetected bugs in clzip (hopefully very unlikely). The
+and against undetected bugs in lzip (hopefully very unlikely). The
 chances of data corruption going undetected are microscopic. Be aware,
 though, that the check occurs upon decompression, so it can only tell
 you that something is wrong. It can't help you recover the original
 uncompressed data.
 
-Clzip uses the same well-defined exit status values used by bzip2, which
+Lzip uses the same well-defined exit status values used by bzip2, which
 makes it safer than compressors returning ambiguous warning values (like
 gzip) when it is used as a back end for other programs like tar or zutils.
 
-Clzip will automatically use for each file the largest dictionary size that
+Lzip will automatically use for each file the largest dictionary size that
 does not exceed neither the file size nor the limit given. Keep in mind that
 the decompression memory requirement is affected at compression time by the
 choice of dictionary size limit.
@@ -155,9 +149,9 @@ limit, else 2) plus 9 times the dictionary size really used. The option
 amount of memory required for decompression is about @w{46 kB} larger
 than the dictionary size really used.
 
-When compressing, clzip replaces every file given in the command line
+When compressing, lzip replaces every file given in the command line
 with a compressed version of itself, with the name "original_name.lz".
-When decompressing, clzip attempts to guess the name for the decompressed
+When decompressing, lzip attempts to guess the name for the decompressed
 file from that of the compressed file as follows:
 
 @multitable {anyothername} {becomes} {anyothername.out}
@@ -166,45 +160,45 @@ file from that of the compressed file as follows:
 @item anyothername @tab becomes @tab anyothername.out
 @end multitable
 
-(De)compressing a file is much like copying or moving it. Therefore clzip
+(De)compressing a file is much like copying or moving it. Therefore lzip
 preserves the access and modification dates, permissions, and, when
 possible, ownership of the file just as @w{@samp{cp -p}} does. (If the user ID or
 the group ID can't be duplicated, the file permission bits S_ISUID and
 S_ISGID are cleared).
 
-Clzip is able to read from some types of non-regular files if either the
+Lzip is able to read from some types of non-regular files if either the
 option @samp{-c} or the option @samp{-o} is specified.
 
-Clzip will refuse to read compressed data from a terminal or write compressed
+Lzip will refuse to read compressed data from a terminal or write compressed
 data to a terminal, as this would be entirely incomprehensible and might
 leave the terminal in an abnormal state.
 
-Clzip will correctly decompress a file which is the concatenation of two or
+Lzip will correctly decompress a file which is the concatenation of two or
 more compressed files. The result is the concatenation of the corresponding
 decompressed files. Integrity testing of concatenated compressed files is
 also supported.
 
-Clzip can produce multimember files, and lziprecover can safely recover the
-undamaged members in case of file damage. Clzip can also split the compressed
+Lzip can produce multimember files, and lziprecover can safely recover the
+undamaged members in case of file damage. Lzip can also split the compressed
 output in volumes of a given size, even when reading from standard input.
 This allows the direct creation of multivolume compressed tar archives.
 
-Clzip is able to compress and decompress streams of unlimited size by
+Lzip is able to compress and decompress streams of unlimited size by
 automatically creating multimember output. The members so created are large,
 about @w{2 PiB} each.
 
 
 @node Output
-@chapter Meaning of clzip's output
+@chapter Meaning of lzip's output
 @cindex output
 
-The output of clzip looks like this:
+The output of lzip looks like this:
 
 @example
-clzip -v foo
+lzip -v foo
   foo:  6.676:1, 14.98% ratio, 85.02% saved, 450560 in, 67493 out.
 
-clzip -tvvv foo.lz
+lzip -tvvv foo.lz
   foo.lz:  6.676:1, 14.98% ratio, 85.02% saved.  450560 out,  67493 in. ok
 @end example
 
@@ -225,7 +219,7 @@ The space saved by compression @w{(1 - ratio)}, shown as a percentage.
 
 @item in
 Size of the input data. This is the uncompressed size when compressing, or
-the compressed size when decompressing or testing. Note that clzip always
+the compressed size when decompressing or testing. Note that lzip always
 prints the uncompressed size before the compressed size when compressing,
 decompressing, testing, or listing.
 
@@ -244,26 +238,26 @@ been compressed. Decompressed is used to refer to data which have undergone
 the process of decompression.
 
 
-@node Invoking clzip
-@chapter Invoking clzip
+@node Invoking lzip
+@chapter Invoking lzip
 @cindex invoking
 @cindex options
 @cindex usage
 @cindex version
 
-The format for running clzip is:
+The format for running lzip is:
 
 @example
-clzip [@var{options}] [@var{files}]
+lzip [@var{options}] [@var{files}]
 @end example
 
 @noindent
-If no file names are specified, clzip compresses (or decompresses) from
+If no file names are specified, lzip compresses (or decompresses) from
 standard input to standard output. A hyphen @samp{-} used as a @var{file}
 argument means standard input. It can be mixed with other @var{files} and is
 read just once, the first time it appears in the command line.
 
-clzip supports the following
+lzip supports the following
 @uref{http://www.nongnu.org/arg-parser/manual/arg_parser_manual.html#Argument-syntax,,options}:
 @ifnothtml
 @xref{Argument syntax,,,arg_parser}.
@@ -276,7 +270,7 @@ Print an informative help message describing the options and exit.
 
 @item -V
 @itemx --version
-Print the version number of clzip on the standard output and exit.
+Print the version number of lzip on the standard output and exit.
 This version number should be included in all bug reports.
 
 @anchor{--trailing-error}
@@ -308,8 +302,8 @@ and @samp{-S}. @samp{-c} has no effect when testing or listing.
 @itemx --decompress
 Decompress the files specified. If a file does not exist, can't be opened,
 or the destination file already exists and @samp{--force} has not been
-specified, clzip continues decompressing the rest of the files and exits with
-error status 1. If a file fails to decompress, or is a terminal, clzip exits
+specified, lzip continues decompressing the rest of the files and exits with
+error status 1. If a file fails to decompress, or is a terminal, lzip exits
 immediately with error status 2 without decompressing the rest of the files.
 A terminal is considered an uncompressed file, and therefore invalid.
 
@@ -358,13 +352,13 @@ independently compressed members). This option (or @samp{-c}) is needed when
 reading from a named pipe (fifo) or from a device. @w{@samp{-o -}} is
 equivalent to @samp{-c}. @samp{-o} has no effect when testing or listing.
 
-In order to keep backward compatibility with clzip versions prior to 1.12,
+In order to keep backward compatibility with lzip versions prior to 1.22,
 when compressing from standard input and no other file names are given, the
 extension @samp{.lz} is appended to @var{file} unless it already ends in
 @samp{.lz} or @samp{.tlz}. This feature will be removed in a future version
-of clzip. Meanwhile, redirection may be used instead of @samp{-o} to write
+of lzip. Meanwhile, redirection may be used instead of @samp{-o} to write
 the compressed output to a file without the extension @samp{.lz} in its
-name: @w{@samp{clzip < file > foo}}.
+name: @w{@samp{lzip < file > foo}}.
 
 When compressing and splitting the output in volumes, @var{file} is used as
 a prefix, and several files named @samp{@var{file}00001.lz},
@@ -377,7 +371,7 @@ Quiet operation. Suppress all messages.
 
 @item -s @var{bytes}
 @itemx --dictionary-size=@var{bytes}
-When compressing, set the dictionary size limit in bytes. Clzip will use
+When compressing, set the dictionary size limit in bytes. Lzip will use
 for each file the largest dictionary size that does not exceed neither
 the file size nor this limit. Valid values range from @w{4 KiB} to
 @w{512 MiB}. Values 12 to 29 are interpreted as powers of two, meaning
@@ -405,7 +399,7 @@ from @w{100 kB} to @w{4 EiB}.
 Check integrity of the files specified, but don't decompress them. This
 really performs a trial decompression and throws away the result. Use it
 together with @samp{-v} to see information about the files. If a file
-fails the test, does not exist, can't be opened, or is a terminal, clzip
+fails the test, does not exist, can't be opened, or is a terminal, lzip
 continues checking the rest of the files. A final diagnostic is shown at
 verbosity level 1 or higher if any file fails the test when testing
 multiple files.
@@ -485,7 +479,7 @@ Table of SI and binary prefixes (unit multipliers):
 Exit status: 0 for a normal exit, 1 for environmental problems (file not
 found, invalid flags, I/O errors, etc), 2 to indicate a corrupt or invalid
 input file, 3 for an internal consistency error (e.g., bug) which caused
-clzip to panic.
+lzip to panic.
 
 
 @node Quality assurance
@@ -692,14 +686,14 @@ concrete algorithm; it is more like "any algorithm using the LZMA coding
 scheme". LZMA compression consists in describing the uncompressed data as a
 succession of coding sequences from the set shown in Section @samp{What is
 coded} (@pxref{what-is-coded}), and then encoding them using a range
-encoder. For example, the option @samp{-0} of clzip uses the scheme in almost
+encoder. For example, the option @samp{-0} of lzip uses the scheme in almost
 the simplest way possible; issuing the longest match it can find, or a
 literal byte if it can't find a match. Inversely, a much more elaborated way
 of finding coding sequences of minimum size than the one currently used by
-clzip could be developed, and the resulting sequence could also be coded
+lzip could be developed, and the resulting sequence could also be coded
 using the LZMA coding scheme.
 
-Clzip currently implements two variants of the LZMA algorithm: fast
+Lzip currently implements two variants of the LZMA algorithm: fast
 (used by option @samp{-0}) and normal (used by all other compression levels).
 
 The high compression of LZMA comes from combining two basic, well-proven
@@ -708,7 +702,7 @@ thing used by every compression algorithm that uses a range encoder or
 similar order-0 entropy coder as its last stage) with segregation of
 contexts according to what the bits are used for.
 
-Clzip is a two stage compressor. The first stage is a Lempel-Ziv coder,
+Lzip is a two stage compressor. The first stage is a Lempel-Ziv coder,
 which reduces redundancy by translating chunks of data to their
 corresponding distance-length pairs. The second stage is a range encoder
 that uses a different probability model for each type of data:
@@ -744,14 +738,14 @@ member or volume size limits are reached.
 10) If there are more data to compress, go back to step 1.
 
 @sp 1
-During compression, clzip reads data in large blocks (one dictionary size at
+During compression, lzip reads data in large blocks (one dictionary size at
 a time). Therefore it may block for up to tens of seconds any process
 feeding data to it through a pipe. This is normal. The blocking intervals
 get longer with higher compression levels because dictionary size increases
 (and compression speed decreases) with compression level.
 
 @noindent
-The ideas embodied in clzip are due to (at least) the following people:
+The ideas embodied in lzip are due to (at least) the following people:
 Abraham Lempel and Jacob Ziv (for the LZ algorithm), Andrey Markov (for the
 definition of Markov chains), G.N.N. Martin (for the definition of range
 encoding), Igor Pavlov (for putting all the above together in LZMA), and
@@ -1127,7 +1121,7 @@ member. In multimember or concatenated files the probability of
 corruption happening in the magic bytes is 5 times smaller than the
 probability of getting a false positive caused by the corruption of the
 integrity information itself. Therefore it can be considered to be below
-the noise level. Additionally, the test used by clzip to discriminate
+the noise level. Additionally, the test used by lzip to discriminate
 trailing data from a corrupt header has a Hamming distance (HD) of 3,
 and the 3 bit flips must happen in different magic bytes for the test to
 fail. In any case, the option @samp{--trailing-error} guarantees that
@@ -1148,14 +1142,14 @@ where a file containing trailing data must be rejected, the option
 @chapter A small tutorial with examples
 @cindex examples
 
-WARNING! Even if clzip is bug-free, other causes may result in a corrupt
+WARNING! Even if lzip is bug-free, other causes may result in a corrupt
 compressed file (bugs in the system libraries, memory errors, etc).
 Therefore, if the data you are going to compress are important, give the
-option @samp{--keep} to clzip and don't remove the original file until you
+option @samp{--keep} to lzip and don't remove the original file until you
 verify the compressed file with a command like
-@w{@samp{clzip -cd file.lz | cmp file -}}. Most RAM errors happening during
+@w{@samp{lzip -cd file.lz | cmp file -}}. Most RAM errors happening during
 compression can only be detected by comparing the compressed file with the
-original because the corruption happens before clzip compresses the RAM
+original because the corruption happens before lzip compresses the RAM
 contents, resulting in a valid compressed file containing wrong data.
 
 @sp 1
@@ -1165,7 +1159,7 @@ Example 1: Extract all the files from archive @samp{foo.tar.lz}.
 @example
   tar -xf foo.tar.lz
 or
-  clzip -cd foo.tar.lz | tar -xf -
+  lzip -cd foo.tar.lz | tar -xf -
 @end example
 
 @sp 1
@@ -1174,7 +1168,7 @@ Example 2: Replace a regular file with its compressed version @samp{file.lz}
 and show the compression ratio.
 
 @example
-clzip -v file
+lzip -v file
 @end example
 
 @sp 1
@@ -1183,7 +1177,7 @@ Example 3: Like example 2 but the created @samp{file.lz} is multimember with
 a member size of @w{1 MiB}. The compression ratio is not shown.
 
 @example
-clzip -b 1MiB file
+lzip -b 1MiB file
 @end example
 
 @sp 1
@@ -1192,7 +1186,7 @@ Example 4: Restore a regular file from its compressed version
 @samp{file.lz}. If the operation is successful, @samp{file.lz} is removed.
 
 @example
-clzip -d file.lz
+lzip -d file.lz
 @end example
 
 @sp 1
@@ -1201,7 +1195,7 @@ Example 5: Verify the integrity of the compressed file @samp{file.lz} and
 show status.
 
 @example
-clzip -tv file.lz
+lzip -tv file.lz
 @end example
 
 @sp 1
@@ -1212,9 +1206,9 @@ more compressed files. @xref{Trailing data}.
 
 @example
 Don't do this
-  cat file1.lz file2.lz file3.lz | clzip -d -
+  cat file1.lz file2.lz file3.lz | lzip -d -
 Do this instead
-  clzip -cd file1.lz file2.lz file3.lz
+  lzip -cd file1.lz file2.lz file3.lz
 @end example
 
 @sp 1
@@ -1223,7 +1217,7 @@ Example 7: Decompress @samp{file.lz} partially until @w{10 KiB} of
 decompressed data are produced.
 
 @example
-clzip -cd file.lz | dd bs=1024 count=10
+lzip -cd file.lz | dd bs=1024 count=10
 @end example
 
 @sp 1
@@ -1232,7 +1226,7 @@ Example 8: Decompress @samp{file.lz} partially from decompressed byte at
 offset 10000 to decompressed byte at offset 14999 (5000 bytes are produced).
 
 @example
-clzip -cd file.lz | dd bs=1000 skip=10 count=5
+lzip -cd file.lz | dd bs=1000 skip=10 count=5
 @end example
 
 @sp 1
@@ -1241,9 +1235,9 @@ Example 9: Compress a whole device in /dev/sdc and send the output to
 @samp{file.lz}.
 
 @example
-  clzip -c /dev/sdc > file.lz
+  lzip -c /dev/sdc > file.lz
 or
-  clzip /dev/sdc -o file.lz
+  lzip /dev/sdc -o file.lz
 @end example
 
 @sp 1
@@ -1252,7 +1246,7 @@ Example 10: Create a multivolume compressed tar archive with a volume size
 of @w{1440 KiB}.
 
 @example
-tar -c some_directory | clzip -S 1440KiB -o volume_name -
+tar -c some_directory | lzip -S 1440KiB -o volume_name -
 @end example
 
 @sp 1
@@ -1260,7 +1254,7 @@ tar -c some_directory | clzip -S 1440KiB -o volume_name -
 Example 11: Extract a multivolume compressed tar archive.
 
 @example
-clzip -cd volume_name*.lz | tar -xf -
+lzip -cd volume_name*.lz | tar -xf -
 @end example
 
 @sp 1
@@ -1270,7 +1264,7 @@ with a volume size of @w{650 MB}, where each volume is a multimember file
 with a member size of @w{32 MiB}.
 
 @example
-clzip -b 32MiB -S 650MB big_db
+lzip -b 32MiB -S 650MB big_db
 @end example
 
 
@@ -1279,14 +1273,14 @@ clzip -b 32MiB -S 650MB big_db
 @cindex bugs
 @cindex getting help
 
-There are probably bugs in clzip. There are certainly errors and
+There are probably bugs in lzip. There are certainly errors and
 omissions in this manual. If you report them, they will get fixed. If
 you don't, no one will ever know about them and they will remain unfixed
 for all eternity, if not longer.
 
-If you find a bug in clzip, please send electronic mail to
+If you find a bug in lzip, please send electronic mail to
 @email{lzip-bug@@nongnu.org}. Include the version number, which you can
-find by running @w{@samp{clzip --version}}.
+find by running @w{@samp{lzip --version}}.
 
 
 @node Reference source code

@@ -7,37 +7,36 @@ INSTALL_DIR = $(INSTALL) -d -m 755
 SHELL = /bin/sh
 CAN_RUN_INSTALLINFO = $(SHELL) -c "install-info --version" > /dev/null 2>&1
 
-objs = carg_parser.o lzip_index.o list.o encoder_base.o encoder.o \
+objs = arg_parser.o lzip_index.o list.o encoder_base.o encoder.o \
        fast_encoder.o decoder.o main.o
 
 
 .PHONY : all install install-bin install-info install-man \
          install-strip install-compress install-strip-compress \
          install-bin-strip install-info-compress install-man-compress \
-         install-as-lzip \
          uninstall uninstall-bin uninstall-info uninstall-man \
          doc info man check dist clean distclean
 
 all : $(progname)
 
 $(progname) : $(objs)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(objs)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(objs)
 
-main.o : main.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -DPROGVERSION=\"$(pkgversion)\" -c -o $@ $<
+main.o : main.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DPROGVERSION=\"$(pkgversion)\" -c -o $@ $<
 
-%.o : %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+%.o : %.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 $(objs)        : Makefile
-carg_parser.o  : carg_parser.h
+arg_parser.o   : arg_parser.h
 decoder.o      : lzip.h decoder.h
 encoder_base.o : lzip.h encoder_base.h
 encoder.o      : lzip.h encoder_base.h encoder.h
 fast_encoder.o : lzip.h encoder_base.h fast_encoder.h
 list.o         : lzip.h lzip_index.h
 lzip_index.o   : lzip.h lzip_index.h
-main.o         : carg_parser.h lzip.h decoder.h encoder_base.h encoder.h fast_encoder.h
+main.o         : arg_parser.h lzip.h decoder.h encoder_base.h encoder.h fast_encoder.h
 
 
 doc : info man
@@ -89,10 +88,6 @@ install-man :
 install-man-compress : install-man
 	lzip -v -9 "$(DESTDIR)$(mandir)/man1/$(progname).1"
 
-install-as-lzip : install
-	-rm -f "$(DESTDIR)$(bindir)/lzip"
-	cd "$(DESTDIR)$(bindir)" && ln -s $(progname) lzip
-
 uninstall : uninstall-man uninstall-info uninstall-bin
 
 uninstall-bin :
@@ -122,7 +117,7 @@ dist : doc
 	  $(DISTNAME)/doc/$(pkgname).info \
 	  $(DISTNAME)/doc/$(pkgname).texi \
 	  $(DISTNAME)/*.h \
-	  $(DISTNAME)/*.c \
+	  $(DISTNAME)/*.cc \
 	  $(DISTNAME)/testsuite/check.sh \
 	  $(DISTNAME)/testsuite/test.txt \
 	  $(DISTNAME)/testsuite/fox.lz \

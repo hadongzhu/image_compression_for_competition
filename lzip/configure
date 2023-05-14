@@ -1,13 +1,13 @@
 #! /bin/sh
-# configure script for Clzip - LZMA lossless data compressor
-# Copyright (C) 2010-2022 Antonio Diaz Diaz.
+# configure script for Lzip - LZMA lossless data compressor
+# Copyright (C) 2008-2022 Antonio Diaz Diaz.
 #
 # This configure script is free software: you have unlimited permission
 # to copy, distribute, and modify it.
 
-pkgname=clzip
-pkgversion=1.13
-progname=clzip
+pkgname=lzip
+pkgversion=1.23
+progname=lzip
 srctrigger=doc/${pkgname}.texi
 
 # clear some things potentially inherited from environment.
@@ -20,13 +20,16 @@ bindir='$(exec_prefix)/bin'
 datarootdir='$(prefix)/share'
 infodir='$(datarootdir)/info'
 mandir='$(datarootdir)/man'
-CC=gcc
+build=no
+check=no
+installdir=
+CXX=g++
 CPPFLAGS=
-CFLAGS='-Wall -W -O2'
+CXXFLAGS='-Wall -W -O2'
 LDFLAGS=
 
-# checking whether we are using GNU C.
-/bin/sh -c "${CC} --version" > /dev/null 2>&1 || { CC=cc ; CFLAGS=-O2 ; }
+# checking whether we are using GNU C++.
+/bin/sh -c "${CXX} --version" > /dev/null 2>&1 || { CXX=c++ ; CXXFLAGS=-O2 ; }
 
 # Loop over all args
 args=
@@ -51,7 +54,7 @@ while [ $# != 0 ] ; do
 	--help | -h)
 		echo "Usage: $0 [OPTION]... [VAR=VALUE]..."
 		echo
-		echo "To assign makefile variables (e.g., CC, CFLAGS...), specify them as"
+		echo "To assign makefile variables (e.g., CXX, CXXFLAGS...), specify them as"
 		echo "arguments to configure in the form VAR=VALUE."
 		echo
 		echo "Options and variables: [defaults in brackets]"
@@ -64,10 +67,13 @@ while [ $# != 0 ] ; do
 		echo "  --datarootdir=DIR     base directory for doc and data [${datarootdir}]"
 		echo "  --infodir=DIR         info files directory [${infodir}]"
 		echo "  --mandir=DIR          man pages directory [${mandir}]"
-		echo "  CC=COMPILER           C compiler to use [${CC}]"
+		echo "  --build               build in one step without using 'make'"
+		echo "  --check               check without using 'make', implies --build"
+		echo "  --installdir=BINDIR   install without using 'make', implies --build"
+		echo "  CXX=COMPILER          C++ compiler to use [${CXX}]"
 		echo "  CPPFLAGS=OPTIONS      command line options for the preprocessor [${CPPFLAGS}]"
-		echo "  CFLAGS=OPTIONS        command line options for the C compiler [${CFLAGS}]"
-		echo "  CFLAGS+=OPTIONS       append options to the current value of CFLAGS"
+		echo "  CXXFLAGS=OPTIONS      command line options for the C++ compiler [${CXXFLAGS}]"
+		echo "  CXXFLAGS+=OPTIONS     append options to the current value of CXXFLAGS"
 		echo "  LDFLAGS=OPTIONS       command line options for the linker [${LDFLAGS}]"
 		echo
 		exit 0 ;;
@@ -81,6 +87,7 @@ while [ $# != 0 ] ; do
 	--datarootdir)  datarootdir=$1 ; arg2=yes ;;
 	--infodir)          infodir=$1 ; arg2=yes ;;
 	--mandir)            mandir=$1 ; arg2=yes ;;
+	--installdir)    installdir=$1 ; arg2=yes ;;
 
 	--srcdir=*)            srcdir=${optarg} ;;
 	--prefix=*)            prefix=${optarg} ;;
@@ -89,12 +96,15 @@ while [ $# != 0 ] ; do
 	--datarootdir=*)  datarootdir=${optarg} ;;
 	--infodir=*)          infodir=${optarg} ;;
 	--mandir=*)            mandir=${optarg} ;;
+	--build)                      build=yes ;;
+	--check)          check=yes ; build=yes ;;
+	--installdir=*)    installdir=${optarg} ; build=yes ;;
 	--no-create)              no_create=yes ;;
 
-	CC=*)              CC=${optarg} ;;
+	CXX=*)            CXX=${optarg} ;;
 	CPPFLAGS=*)  CPPFLAGS=${optarg} ;;
-	CFLAGS=*)      CFLAGS=${optarg} ;;
-	CFLAGS+=*)     CFLAGS="${CFLAGS} ${optarg}" ;;
+	CXXFLAGS=*)  CXXFLAGS=${optarg} ;;
+	CXXFLAGS+=*) CXXFLAGS="${CXXFLAGS} ${optarg}" ;;
 	LDFLAGS=*)    LDFLAGS=${optarg} ;;
 
 	--*)
@@ -135,6 +145,29 @@ fi
 # Set srcdir to . if that's what it is.
 if [ "`pwd`" = "`cd "${srcdir}" ; pwd`" ] ; then srcdir=. ; fi
 
+if [ "${build}" = yes ] ; then
+  objs=$(sed -e :a -e '/\\$/N; s/\\\n//; ta' "${srcdir}/Makefile.in" | \
+         sed -n -e 's/^ *objs *= *//p' | sed -e 's/ \{2,\}/ /g')
+  for ofile in ${objs} ; do
+    file="${ofile%.o}.cc" ; pver=
+    [ "${ofile}" = main.o ] && pver=" -DPROGVERSION=\"${pkgversion}\""
+    compile_command="${CXX} ${CPPFLAGS} ${CXXFLAGS}${pver} -c -o ${ofile}"
+    echo "${compile_command} ${srcdir}/${file}"
+    ${compile_command} "${srcdir}/${file}" || exit 1
+  done
+  link_command="${CXX} ${LDFLAGS} ${CXXFLAGS} -o ${progname} ${objs}"
+  echo "${link_command}" ; ${link_command} || exit 1
+  if [ "${check}" = yes ] ; then
+    "${srcdir}/testsuite/check.sh" "${srcdir}/testsuite" ${pkgversion} || exit 1
+  fi
+  if [ -n "${installdir}" ] ; then
+    echo "installing ${progname} in ${installdir}"
+    [ -d "${installdir}" ] || mkdir -p "${installdir}" || exit 1
+    cp -fp ${progname} "${installdir}/${progname}" || exit 1
+  fi
+  exit 0
+fi
+
 echo
 if [ -z "${no_create}" ] ; then
 	echo "creating config.status"
@@ -160,14 +193,14 @@ echo "bindir = ${bindir}"
 echo "datarootdir = ${datarootdir}"
 echo "infodir = ${infodir}"
 echo "mandir = ${mandir}"
-echo "CC = ${CC}"
+echo "CXX = ${CXX}"
 echo "CPPFLAGS = ${CPPFLAGS}"
-echo "CFLAGS = ${CFLAGS}"
+echo "CXXFLAGS = ${CXXFLAGS}"
 echo "LDFLAGS = ${LDFLAGS}"
 rm -f Makefile
 cat > Makefile << EOF
-# Makefile for Clzip - LZMA lossless data compressor
-# Copyright (C) 2010-2022 Antonio Diaz Diaz.
+# Makefile for Lzip - LZMA lossless data compressor
+# Copyright (C) 2008-2022 Antonio Diaz Diaz.
 # This file was generated automatically by configure. Don't edit.
 #
 # This Makefile is free software: you have unlimited permission
@@ -183,9 +216,9 @@ bindir = ${bindir}
 datarootdir = ${datarootdir}
 infodir = ${infodir}
 mandir = ${mandir}
-CC = ${CC}
+CXX = ${CXX}
 CPPFLAGS = ${CPPFLAGS}
-CFLAGS = ${CFLAGS}
+CXXFLAGS = ${CXXFLAGS}
 LDFLAGS = ${LDFLAGS}
 EOF
 cat "${srcdir}/Makefile.in" >> Makefile

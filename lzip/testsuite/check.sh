@@ -1,6 +1,6 @@
 #! /bin/sh
-# check script for Clzip - LZMA lossless data compressor
-# Copyright (C) 2010-2022 Antonio Diaz Diaz.
+# check script for Lzip - LZMA lossless data compressor
+# Copyright (C) 2008-2022 Antonio Diaz Diaz.
 #
 # This script is free software: you have unlimited permission
 # to copy, distribute, and modify it.
@@ -9,7 +9,7 @@ LC_ALL=C
 export LC_ALL
 objdir=`pwd`
 testdir=`cd "$1" ; pwd`
-LZIP="${objdir}"/clzip
+LZIP="${objdir}"/lzip
 framework_failure() { echo "failure in testing framework" ; exit 1 ; }
 
 if [ ! -f "${LZIP}" ] || [ ! -x "${LZIP}" ] ; then
@@ -35,7 +35,7 @@ fox_lz="${testdir}"/fox.lz
 fail=0
 test_failed() { fail=1 ; printf " $1" ; [ -z "$2" ] || printf "($2)" ; }
 
-printf "testing clzip-%s..." "$2"
+printf "testing lzip-%s..." "$2"
 
 "${LZIP}" -fkqm4 in
 [ $? = 1 ] || test_failed $LINENO
