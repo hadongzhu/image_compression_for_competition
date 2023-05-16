@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cstring>
+#include <string>
+#include <vector>
 
 /* Lzip - LZMA lossless data compressor
    Copyright (C) 2008-2022 Antonio Diaz Diaz.
