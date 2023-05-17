@@ -12,11 +12,11 @@ extern "C"
 #include "stdint.h"
 #include "stdbool.h"
 
-void lzipCompress(uint8_t *inputStream, uint32_t inputStreamLength,
-                   uint8_t *outputStream, uint32_t *outputStreamLength);
+void lzipCompress(const uint8_t *inputStream, int32_t inputStreamLength,
+                   uint8_t *outputStream, int32_t *outputStreamLength);
 
-void lzipDecompress(uint8_t *inputStream, uint32_t inputStreamLength,
-                   uint8_t *outputStream, uint32_t *outputStreamLength);
+void lzipDecompress(const uint8_t *inputStream, int32_t inputStreamLength,
+                   uint8_t *outputStream, int32_t *outputStreamLength);
 
 #ifdef __cplusplus
 }

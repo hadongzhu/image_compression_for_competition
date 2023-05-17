@@ -7,6 +7,8 @@
 #include <assert.h>
 #include "rgbTileProc.h"
 
+#include "lzipWapper.h"
+
 static int g_nTileWidth = 0;
 static int g_nTileHeight = 0;
 
@@ -28,8 +30,9 @@ void tileSetSize(int nTileWidth, int nTileHeight)
 int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize)
 {
 	assert(g_nTileWidth > 0 && g_nTileHeight > 0);
-	*pTileSize = g_nTileWidth * g_nTileHeight * 4;
-	memcpy(pTile, pClrBlk, *pTileSize);
+//	*pTileSize = g_nTileWidth * g_nTileHeight * 4;
+//	memcpy(pTile, pClrBlk, *pTileSize);
+    lzipCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
 	return 0;
 }
 
@@ -44,6 +47,8 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
 */
 int tile2argb(const unsigned char* pTile, int nTileSize, unsigned char* pClrBlk)
 {
-	memcpy(pClrBlk, pTile, nTileSize);
+//	memcpy(pClrBlk, pTile, nTileSize);
+    int32_t nClrBlkSize;
+    lzipDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
 	return 0;
 }

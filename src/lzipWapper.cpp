@@ -12,11 +12,12 @@
 #define ID_STRING   0x4C, 0x5A, 0x49, 0x50
 #define VN          0x01
 #define DS          0x0C
+#define CRC32       0x00, 0x00, 0x00, 0x00
 #define DATA_SIZE   0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 #define MEMBER_SIZE 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 
 uint8_t lzipHead[] = {ID_STRING, VN, DS};
-uint8_t lzipTail[] = {DATA_SIZE, MEMBER_SIZE};
+uint8_t lzipTail[] = {CRC32, DATA_SIZE, MEMBER_SIZE};
 
 static inline uint32_t lzipHeadSize()
 {
@@ -28,14 +29,14 @@ static inline uint32_t lzipTailSize()
     return sizeof(lzipTail) / sizeof (uint8_t);
 }
 
-void lzipCompress(uint8_t *inputStream, uint32_t inputStreamLength,
-                   uint8_t *outputStream, uint32_t *outputStreamLength)
+void lzipCompress(const uint8_t *inputStream, const int32_t inputStreamLength,
+                   uint8_t *outputStream, int32_t *outputStreamLength)
 {
-    int infd = open("clzip_compress_temp", O_CREAT | O_RDWR | O_BINARY | O_TRUNC);
+    int infd = open("clzip_compress_temp", O_CREAT | O_RDWR | O_BINARY | O_TRUNC, 0777);
     write(infd, inputStream, inputStreamLength);
     close(infd);
 
-    const char *argv[] = {"-9", "-f", "-k", "clzip_compress_temp"};
+    const char *argv[] = {"-9", "-f", "clzip_compress_temp"};
     int argc = sizeof (argv) / sizeof(char **);
 
     lzip(argc, (const char *const *) argv);
@@ -47,21 +48,22 @@ void lzipCompress(uint8_t *inputStream, uint32_t inputStreamLength,
     close(outfd);
     *outputStreamLength -= lzipHeadSize() + lzipTailSize();
     memcpy(outputStream, outputStream + lzipHeadSize(), *outputStreamLength);
-    // remove("clzip_compress_temp.lz");
-    // remove("clzip_compress_temp");
+    remove("clzip_compress_temp.lz");
+//    remove("clzip_compress_temp");
 }
 
-void lzipDecompress(uint8_t *inputStream, uint32_t inputStreamLength,
-                     uint8_t *outputStream, uint32_t *outputStreamLength)
+void lzipDecompress(const uint8_t *inputStream, const int32_t inputStreamLength,
+                     uint8_t *outputStream, int32_t *outputStreamLength)
 {
-    int infd = open("clzip_decompress_temp.lz", O_CREAT | O_RDWR | O_BINARY | O_TRUNC);
+    int infd = open("clzip_decompress_temp.lz", O_CREAT | O_RDWR | O_BINARY | O_TRUNC, 0777);
     write(infd, lzipHead, lzipHeadSize());
     write(infd, inputStream, inputStreamLength);
-    lzipTail[8] = inputStreamLength + lzipHeadSize() + lzipTailSize();
+//    lzipTail[8] = (inputStreamLength + lzipHeadSize() + lzipTailSize()) % 256;
+//    lzipTail[9] = (inputStreamLength + lzipHeadSize() + lzipTailSize()) / 256;
     write(infd, lzipTail, lzipTailSize());
     close(infd);
 
-    const char* argv[] = {"-9", "-d", "-f", "-k", "clzip_decompress_temp.lz"};
+    const char* argv[] = {"-9", "-d", "-f", "clzip_decompress_temp.lz"};
     int argc = sizeof (argv) / sizeof(char **);
 
     lzip(argc, (const char *const *) argv);
@@ -71,6 +73,6 @@ void lzipDecompress(uint8_t *inputStream, uint32_t inputStreamLength,
     lseek(outfd, 0, SEEK_SET);
     read(outfd, outputStream, *outputStreamLength);
     close(outfd);
-    // remove("clzip_decompress_temp");
-    // remove("clzip_decompress_temp.lz");
+    remove("clzip_decompress_temp");
+//    remove("clzip_decompress_temp.lz");
 }

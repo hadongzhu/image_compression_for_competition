@@ -119,39 +119,39 @@ bool LZ_decoder::verify_trailer( const Pretty_print & pp ) const
     while( size < Lzip_trailer::size ) trailer.data[size++] = 0;
     }
 
-  const unsigned td_crc = trailer.data_crc();
-  if( td_crc != crc() )
-    {
-    error = true;
-    if( verbosity >= 0 )
-      {
-      pp();
-      std::fprintf( stderr, "CRC mismatch; stored %08X, computed %08X\n",
-                    td_crc, crc() );
-      }
-    }
-  const unsigned long long td_size = trailer.data_size();
-  if( td_size != data_size )
-    {
-    error = true;
-    if( verbosity >= 0 )
-      {
-      pp();
-      std::fprintf( stderr, "Data size mismatch; stored %llu (0x%llX), computed %llu (0x%llX)\n",
-                    td_size, td_size, data_size, data_size );
-      }
-    }
-  const unsigned long long tm_size = trailer.member_size();
-  if( tm_size != member_size )
-    {
-    error = true;
-    if( verbosity >= 0 )
-      {
-      pp();
-      std::fprintf( stderr, "Member size mismatch; stored %llu (0x%llX), computed %llu (0x%llX)\n",
-                    tm_size, tm_size, member_size, member_size );
-      }
-    }
+//  const unsigned td_crc = trailer.data_crc();
+//  if( td_crc != crc() )
+//    {
+//    error = true;
+//    if( verbosity >= 0 )
+//      {
+//      pp();
+//      std::fprintf( stderr, "CRC mismatch; stored %08X, computed %08X\n",
+//                    td_crc, crc() );
+//      }
+//    }
+//  const unsigned long long td_size = trailer.data_size();
+//  if( td_size != data_size )
+//    {
+//    error = true;
+//    if( verbosity >= 0 )
+//      {
+//      pp();
+//      std::fprintf( stderr, "Data size mismatch; stored %llu (0x%llX), computed %llu (0x%llX)\n",
+//                    td_size, td_size, data_size, data_size );
+//      }
+//    }
+//  const unsigned long long tm_size = trailer.member_size();
+//  if( tm_size != member_size )
+//    {
+//    error = true;
+//    if( verbosity >= 0 )
+//      {
+//      pp();
+//      std::fprintf( stderr, "Member size mismatch; stored %llu (0x%llX), computed %llu (0x%llX)\n",
+//                    tm_size, tm_size, member_size, member_size );
+//      }
+//    }
   if( error ) return false;
   if( verbosity >= 2 )
     {
@@ -163,7 +163,7 @@ bool LZ_decoder::verify_trailer( const Pretty_print & pp ) const
                     (double)data_size / member_size,
                     ( 100.0 * member_size ) / data_size,
                     100.0 - ( ( 100.0 * member_size ) / data_size ) );
-    if( verbosity >= 4 ) std::fprintf( stderr, "CRC %08X, ", td_crc );
+//    if( verbosity >= 4 ) std::fprintf( stderr, "CRC %08X, ", td_crc );
     if( verbosity >= 3 )
       std::fprintf( stderr, "%9llu out, %8llu in. ", data_size, member_size );
     }
