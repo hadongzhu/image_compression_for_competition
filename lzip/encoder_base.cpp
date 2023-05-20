@@ -39,7 +39,7 @@ bool Matchfinder_base::read_block()
   if( !at_stream_end && stream_pos < buffer_size )
     {
     const int size = buffer_size - stream_pos;
-    const int rd = readblock( infd, buffer + stream_pos, size );
+    const int rd = readblockFromMemory( buffer + stream_pos, size, inputStream, inputStreamLength );
     stream_pos += rd;
     if( rd != size && errno ) throw Error( "Read error" );
     if( rd < size ) { at_stream_end = true; pos_limit = buffer_size; }
@@ -51,7 +51,7 @@ bool Matchfinder_base::read_block()
 void Matchfinder_base::normalize_pos()
   {
   if( pos > stream_pos )
-    internal_error( "pos > stream_pos in normalize_pos." );
+//    internal_error( "pos > stream_pos in normalize_pos." );
   if( !at_stream_end )
     {
     // offset is int32_t for the std::min below
@@ -73,7 +73,8 @@ void Matchfinder_base::normalize_pos()
 Matchfinder_base::Matchfinder_base( const int before_size_,
                     const int dict_size, const int after_size,
                     const int dict_factor, const int num_prev_positions23_,
-                    const int pos_array_factor, const int ifd )
+                    const int pos_array_factor,
+                    const uint8_t *inputStream, const int32_t inputStreamLength)
   :
   partial_data_pos( 0 ),
   before_size( before_size_ ),
@@ -81,7 +82,9 @@ Matchfinder_base::Matchfinder_base( const int before_size_,
   cyclic_pos( 0 ),
   stream_pos( 0 ),
   num_prev_positions23( num_prev_positions23_ ),
-  infd( ifd ),
+//  infd( ifd ),
+  inputStream(inputStream),
+  inputStreamLength(inputStreamLength),
   at_stream_end( false )
   {
   const int buffer_size_limit =
@@ -146,11 +149,13 @@ void Range_encoder::flush_data()
   {
   if( pos > 0 )
     {
-    if( outfd >= 0 && writeblock( outfd, buffer, pos ) != pos )
-      throw Error( "Write error" );
+        memcpy(outputStream + partial_member_pos, buffer, pos);
+//    if( outfd >= 0 && writeblock( outfd, buffer, pos ) != pos )
+//      throw Error( "Write error" );
+    *outputStreamLength += pos;
     partial_member_pos += pos;
     pos = 0;
-    show_cprogress();
+//    show_cprogress();
     }
   }
 
@@ -163,12 +168,12 @@ void LZ_encoder_base::full_flush( const State state )
   renc.encode_bit( bm_rep[state()], 0 );
   encode_pair( 0xFFFFFFFFU, min_match_len, pos_state );
   renc.flush();
-  Lzip_trailer trailer;
-  trailer.data_crc( crc() );
-  trailer.data_size( data_position() );
-  trailer.member_size( renc.member_position() + Lzip_trailer::size );
-  for( int i = 0; i < Lzip_trailer::size; ++i )
-    renc.put_byte( trailer.data[i] );
+//  Lzip_trailer trailer;
+//  trailer.data_crc( crc() );
+//  trailer.data_size( data_position() );
+//  trailer.member_size( renc.member_position() + Lzip_trailer::size );
+//  for( int i = 0; i < Lzip_trailer::size; ++i )
+//    renc.put_byte( trailer.data[i] );
   renc.flush_data();
   }
 

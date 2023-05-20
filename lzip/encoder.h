@@ -263,10 +263,11 @@ class LZ_encoder : public LZ_encoder_base
 
 public:
   LZ_encoder( const int dict_size, const int len_limit,
-              const int ifd, const int outfd )
+              const uint8_t *inputStream, const int32_t inputStreamLength,
+              uint8_t *outputStream, int32_t *outputStreamLength)
     :
     LZ_encoder_base( before_size, dict_size, after_size, dict_factor,
-                     num_prev_positions23, pos_array_factor, ifd, outfd ),
+                     num_prev_positions23, pos_array_factor, inputStream, inputStreamLength, outputStream, outputStreamLength),
     cycles( ( len_limit < max_match_len ) ? 16 + ( len_limit / 2 ) : 256 ),
     match_len_limit( len_limit ),
     match_len_prices( match_len_model, match_len_limit ),

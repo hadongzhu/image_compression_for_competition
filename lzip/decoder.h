@@ -24,8 +24,11 @@ class Range_decoder
   int stream_pos;		// when reached, a new block must be read
   uint32_t code;
   uint32_t range;
-  const int infd;		// input file descriptor
+//  const int infd;		// input file descriptor
   bool at_stream_end;
+
+    const uint8_t *inputStream;
+    const int32_t inputStreamLength;
 
   bool read_block();
 
@@ -33,7 +36,7 @@ class Range_decoder
   void operator=( const Range_decoder & );	// declared as private
 
 public:
-  explicit Range_decoder( const int ifd )
+  explicit Range_decoder(const uint8_t *inputStream, const int32_t inputStreamLength)
     :
     partial_member_pos( 0 ),
     buffer( new uint8_t[buffer_size] ),
@@ -41,7 +44,9 @@ public:
     stream_pos( 0 ),
     code( 0 ),
     range( 0xFFFFFFFFU ),
-    infd( ifd ),
+    inputStream(inputStream),
+    inputStreamLength(inputStreamLength),
+//    infd( ifd ),
     at_stream_end( false )
     {}
 
@@ -264,7 +269,9 @@ class LZ_decoder
   unsigned pos;			// current pos in buffer
   unsigned stream_pos;		// first byte not yet written to file
   uint32_t crc_;
-  const int outfd;		// output file descriptor
+//  const int outfd;		// output file descriptor
+    uint8_t *outputStream;
+    int32_t *outputStreamLength;
   bool pos_wrapped;
 
   void flush_data();
@@ -321,7 +328,7 @@ class LZ_decoder
   void operator=( const LZ_decoder & );		// declared as private
 
 public:
-  LZ_decoder( Range_decoder & rde, const unsigned dict_size, const int ofd )
+  LZ_decoder( Range_decoder & rde, const unsigned dict_size, uint8_t *outputStream, int32_t *outputStreamLength)
     :
     partial_data_pos( 0 ),
     rdec( rde ),
@@ -330,15 +337,19 @@ public:
     pos( 0 ),
     stream_pos( 0 ),
     crc_( 0xFFFFFFFFU ),
-    outfd( ofd ),
+//    outfd( ofd ),
+    outputStream(outputStream),
+    outputStreamLength(outputStreamLength),
     pos_wrapped( false )
     // prev_byte of first byte; also for peek( 0 ) on corrupt file
-    { buffer[dictionary_size-1] = 0; }
+    { buffer[dictionary_size-1] = 0;
+      *outputStreamLength = 0;
+     }
 
   ~LZ_decoder() { delete[] buffer; }
 
   unsigned crc() const { return crc_ ^ 0xFFFFFFFFU; }
   unsigned long long data_position() const { return partial_data_pos + pos; }
 
-  int decode_member( const Pretty_print & pp );
+  int decode_member();
   };

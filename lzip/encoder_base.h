@@ -184,13 +184,16 @@ protected:
   const int num_prev_positions23;
   int num_prev_positions;	// size of prev_positions
   int pos_array_size;
-  const int infd;		// input file descriptor
+//  const int infd;		// input file descriptor
+    const uint8_t *inputStream;
+    const int32_t inputStreamLength;
   bool at_stream_end;		// stream_pos shows real end of file
 
   Matchfinder_base( const int before_size_,
                     const int dict_size, const int after_size,
                     const int dict_factor, const int num_prev_positions23_,
-                    const int pos_array_factor, const int ifd );
+                    const int pos_array_factor,
+                    const uint8_t *inputStream, const int32_t inputStreamLength);
 
   ~Matchfinder_base()
     { delete[] prev_positions; std::free( buffer ); }
@@ -230,9 +233,11 @@ class Range_encoder
   int pos;			// current pos in buffer
   uint32_t range;
   unsigned ff_count;
-  const int outfd;		// output file descriptor
+//  const int outfd;		// output file descriptor
   uint8_t cache;
   Lzip_header header;
+    uint8_t *outputStream;
+    int32_t *outputStreamLength;
 
   void shift_low()
     {
@@ -260,16 +265,19 @@ public:
     ff_count = 0;
     cache = 0;
     header.dictionary_size( dictionary_size );
-    for( int i = 0; i < Lzip_header::size; ++i )
-      put_byte( header.data[i] );
+//    for( int i = 0; i < Lzip_header::size; ++i )
+//      put_byte( header.data[i] );
     }
 
-  Range_encoder( const unsigned dictionary_size, const int ofd )
+  Range_encoder( const unsigned dictionary_size,
+                 uint8_t *outputStream, int32_t *outputStreamLength)
     :
-    buffer( new uint8_t[buffer_size] ), outfd( ofd )
+    buffer( new uint8_t[buffer_size] ),
+    outputStream(outputStream), outputStreamLength(outputStreamLength)
     {
     header.set_magic();
     reset( dictionary_size );
+    *outputStreamLength = 0;
     }
 
   ~Range_encoder() { delete[] buffer; }
@@ -422,12 +430,13 @@ protected:
                    const int after_size, const int dict_factor,
                    const int num_prev_positions23,
                    const int pos_array_factor,
-                   const int ifd, const int outfd )
+                   const uint8_t *inputStream, const int32_t inputStreamLength,
+                   uint8_t *outputStream, int32_t *outputStreamLength)
     :
     Matchfinder_base( before_size, dict_size, after_size, dict_factor,
-                      num_prev_positions23, pos_array_factor, ifd ),
+                      num_prev_positions23, pos_array_factor , inputStream, inputStreamLength),
     crc_( 0xFFFFFFFFU ),
-    renc( dictionary_size, outfd )
+    renc( dictionary_size,outputStream, outputStreamLength)
     {}
 
   unsigned crc() const { return crc_ ^ 0xFFFFFFFFU; }

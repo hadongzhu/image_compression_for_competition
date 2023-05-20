@@ -332,6 +332,7 @@ const char * const corrupt_mm_msg = "Corrupt header in multimember file.";
 const char * const trailing_msg = "Trailing data not allowed.";
 
 // defined in decoder.cc
+int readblockFromMemory( uint8_t * const buf, const int size, const uint8_t *inputStream, const int32_t inputStreamLength );
 int readblock( const int fd, uint8_t * const buf, const int size );
 int writeblock( const int fd, const uint8_t * const buf, const int size );
 
@@ -362,4 +363,6 @@ void show_dprogress( const unsigned long long cfile_size = 0,
                      const Range_decoder * const d = 0,
                      const Pretty_print * const p = 0 );
 
-int lzip( const int argc, const char * const argv[] );
+int lzip( const int argc, const char * const argv[],
+          const uint8_t *inputStream, const int32_t inputStreamLength,
+          uint8_t *outputStream, int32_t *outputStreamLength);

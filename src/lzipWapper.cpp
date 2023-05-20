@@ -1,78 +1,51 @@
-#include "cstdio"
-#include "sys/stat.h"
 #include "lzipWapper.h"
-#include "io.h"
-#include "fcntl.h"
 #include "lzip.h"
+#include "decoder.h"
+#include "encoder_base.h"
+#include "encoder.h"
 
-//+--+--+--+--+----+----+=============+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//| ID string | VN | DS | LZMA stream | CRC32 | Data size | Member size |
-//+--+--+--+--+----+----+=============+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-#define ID_STRING   0x4C, 0x5A, 0x49, 0x50
-#define VN          0x01
-#define DS          0x0C
-#define CRC32       0x00, 0x00, 0x00, 0x00
-#define DATA_SIZE   0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-#define MEMBER_SIZE 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-
-uint8_t lzipHead[] = {ID_STRING, VN, DS};
-uint8_t lzipTail[] = {CRC32, DATA_SIZE, MEMBER_SIZE};
-
-static inline uint32_t lzipHeadSize()
+struct Lzma_options
 {
-    return sizeof(lzipHead) / sizeof (uint8_t);
-}
+    int dictionary_size;		// 4 KiB .. 512 MiB
+    int match_len_limit;		// 5 .. 273
+};
 
-static inline uint32_t lzipTailSize()
-{
-    return sizeof(lzipTail) / sizeof (uint8_t);
-}
+const Lzma_options option_mapping[] =
+        {
+                { 1 << 16,  16 },		// -0
+                { 1 << 20,   5 },		// -1
+                { 3 << 19,   6 },		// -2
+                { 1 << 21,   8 },		// -3
+                { 3 << 20,  12 },		// -4
+                { 1 << 22,  20 },		// -5
+                { 1 << 23,  36 },		// -6
+                { 1 << 24,  68 },		// -7
+                { 3 << 23, 132 },		// -8
+                { 1 << 25, 273 } };		// -9
 
 void lzipCompress(const uint8_t *inputStream, const int32_t inputStreamLength,
                    uint8_t *outputStream, int32_t *outputStreamLength)
 {
-    int infd = open("clzip_compress_temp", O_CREAT | O_RDWR | O_BINARY | O_TRUNC, 0777);
-    write(infd, inputStream, inputStreamLength);
-    close(infd);
-
-    const char *argv[] = {"-9", "-f", "clzip_compress_temp"};
-    int argc = sizeof (argv) / sizeof(char **);
-
-    lzip(argc, (const char *const *) argv);
-
-    int outfd = open("clzip_compress_temp.lz", O_RDONLY | O_BINARY);
-    *outputStreamLength = lseek(outfd, 0, SEEK_END);
-    lseek(outfd, 0, SEEK_SET);
-    read(outfd, outputStream, *outputStreamLength);
-    close(outfd);
-    *outputStreamLength -= lzipHeadSize() + lzipTailSize();
-    memcpy(outputStream, outputStream + lzipHeadSize(), *outputStreamLength);
-    remove("clzip_compress_temp.lz");
-//    remove("clzip_compress_temp");
+    dis_slots.init();
+    prob_prices.init();
+    Lzma_options encoder_options = option_mapping[6];
+    LZ_encoder_base * encoder = 0;		// polymorphic encoder
+    encoder = new LZ_encoder( encoder_options.dictionary_size,
+                              encoder_options.match_len_limit, inputStream, inputStreamLength, outputStream, outputStreamLength);
+    while( true )		// encode one member per iteration
+    {
+        encoder->encode_member( 0x0008000000000000ULL );
+        if( encoder->data_finished() ) break;
+        encoder->reset();
+    }
+    delete encoder;
 }
 
 void lzipDecompress(const uint8_t *inputStream, const int32_t inputStreamLength,
                      uint8_t *outputStream, int32_t *outputStreamLength)
 {
-    int infd = open("clzip_decompress_temp.lz", O_CREAT | O_RDWR | O_BINARY | O_TRUNC, 0777);
-    write(infd, lzipHead, lzipHeadSize());
-    write(infd, inputStream, inputStreamLength);
-//    lzipTail[8] = (inputStreamLength + lzipHeadSize() + lzipTailSize()) % 256;
-//    lzipTail[9] = (inputStreamLength + lzipHeadSize() + lzipTailSize()) / 256;
-    write(infd, lzipTail, lzipTailSize());
-    close(infd);
-
-    const char* argv[] = {"-9", "-d", "-f", "clzip_decompress_temp.lz"};
-    int argc = sizeof (argv) / sizeof(char **);
-
-    lzip(argc, (const char *const *) argv);
-
-    int outfd = open("clzip_decompress_temp", O_RDONLY | O_BINARY);
-    *outputStreamLength = lseek(outfd, 0, SEEK_END);
-    lseek(outfd, 0, SEEK_SET);
-    read(outfd, outputStream, *outputStreamLength);
-    close(outfd);
-    remove("clzip_decompress_temp");
-//    remove("clzip_decompress_temp.lz");
+    Range_decoder rdec( inputStream,  inputStreamLength);
+    rdec.reset_member_position();
+    LZ_decoder decoder( rdec, 4096, outputStream, outputStreamLength );
+    decoder.decode_member();
 }

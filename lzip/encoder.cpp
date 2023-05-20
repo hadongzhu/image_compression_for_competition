@@ -489,8 +489,9 @@ bool LZ_encoder::encode_member( const unsigned long long member_size )
   State state;
   for( int i = 0; i < num_rep_distances; ++i ) reps[i] = 0;
 
-  if( data_position() != 0 || renc.member_position() != Lzip_header::size )
-    return false;				// can be called only once
+//  if( data_position() != 0 || renc.member_position() != Lzip_header::size )
+    if(data_position() != 0 || renc.member_position() != 0)
+        return false;				// can be called only once
 
   if( !data_finished() )			// encode first byte
     {

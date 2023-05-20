@@ -25,7 +25,6 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
-#include <unistd.h>
 #include <io.h>
 
 #include "lzip.h"
@@ -35,20 +34,36 @@
 /* Return the number of bytes really read.
    If (value returned < size) and (errno == 0), means EOF was reached.
 */
-int readblock( const int fd, uint8_t * const buf, const int size )
+int readblockFromMemory(uint8_t * const buf, const int size, const uint8_t *inputStream, const int32_t inputStreamLength )
   {
-  int sz = 0;
-  errno = 0;
-  while( sz < size )
-    {
-    const int n = read( fd, buf + sz, size - sz );
-    if( n > 0 ) sz += n;
-    else if( n == 0 ) break;				// EOF
-    else if( errno != EINTR ) break;
-    errno = 0;
-    }
-  return sz;
+//  int sz = 0;
+//  errno = 0;
+    memcpy(buf, inputStream, size < inputStreamLength ? size : inputStreamLength);
+//  while( sz < size )
+//    {
+//    const int n = read( fd, buf + sz, size - sz );
+//    if( n > 0 ) sz += n;
+//    else if( n == 0 ) break;				// EOF
+//    else if( errno != EINTR ) break;
+//    errno = 0;
+//    }
+  return size < inputStreamLength ? size : inputStreamLength;
   }
+
+int readblock( const int fd, uint8_t * const buf, const int size )
+{
+    int sz = 0;
+    errno = 0;
+    while( sz < size )
+    {
+        const int n = read( fd, buf + sz, size - sz );
+        if( n > 0 ) sz += n;
+        else if( n == 0 ) break;				// EOF
+        else if( errno != EINTR ) break;
+        errno = 0;
+    }
+    return sz;
+}
 
 
 /* Return the number of bytes really written.
@@ -73,12 +88,15 @@ bool Range_decoder::read_block()
   {
   if( !at_stream_end )
     {
-    stream_pos = readblock( infd, buffer, buffer_size );
+//    stream_pos = readblock( infd, buffer, buffer_size );
+      memcpy(buffer, inputStream + stream_pos,
+             (buffer_size < inputStreamLength - stream_pos) ? buffer_size: inputStreamLength - stream_pos);
+      stream_pos += (buffer_size < inputStreamLength - stream_pos) ? buffer_size: inputStreamLength - stream_pos;
     if( stream_pos != buffer_size && errno ) throw Error( "Read error" );
     at_stream_end = ( stream_pos < buffer_size );
     partial_member_pos += pos;
     pos = 0;
-    show_dprogress();
+//    show_dprogress();
     }
   return pos < stream_pos;
   }
@@ -89,9 +107,11 @@ void LZ_decoder::flush_data()
   if( pos > stream_pos )
     {
     const int size = pos - stream_pos;
-    crc32.update_buf( crc_, buffer + stream_pos, size );
-    if( outfd >= 0 && writeblock( outfd, buffer + stream_pos, size ) != size )
-      throw Error( "Write error" );
+    // crc32.update_buf( crc_, buffer + stream_pos, size );
+//    if( outfd >= 0 && writeblock( outfd, buffer + stream_pos, size ) != size )
+//      throw Error( "Write error" );
+      memcpy(outputStream + *outputStreamLength, buffer + stream_pos, size);
+      *outputStreamLength += size;
     if( pos >= dictionary_size )
       { partial_data_pos += pos; pos = 0; pos_wrapped = true; }
     stream_pos = pos;
@@ -99,81 +119,81 @@ void LZ_decoder::flush_data()
   }
 
 
-bool LZ_decoder::verify_trailer( const Pretty_print & pp ) const
-  {
-  Lzip_trailer trailer;
-  int size = rdec.read_data( trailer.data, Lzip_trailer::size );
-  const unsigned long long data_size = data_position();
-  const unsigned long long member_size = rdec.member_position();
-  bool error = false;
-
-  if( size < Lzip_trailer::size )
-    {
-    error = true;
-    if( verbosity >= 0 )
-      {
-      pp();
-      std::fprintf( stderr, "Trailer truncated at trailer position %d;"
-                            " some checks may fail.\n", size );
-      }
-    while( size < Lzip_trailer::size ) trailer.data[size++] = 0;
-    }
-
-//  const unsigned td_crc = trailer.data_crc();
-//  if( td_crc != crc() )
+//bool LZ_decoder::verify_trailer( const Pretty_print & pp ) const
+//  {
+//  Lzip_trailer trailer;
+//  int size = rdec.read_data( trailer.data, Lzip_trailer::size );
+//  const unsigned long long data_size = data_position();
+//  const unsigned long long member_size = rdec.member_position();
+//  bool error = false;
+//
+//  if( size < Lzip_trailer::size )
 //    {
 //    error = true;
 //    if( verbosity >= 0 )
 //      {
 //      pp();
-//      std::fprintf( stderr, "CRC mismatch; stored %08X, computed %08X\n",
-//                    td_crc, crc() );
+//      std::fprintf( stderr, "Trailer truncated at trailer position %d;"
+//                            " some checks may fail.\n", size );
 //      }
+//    while( size < Lzip_trailer::size ) trailer.data[size++] = 0;
 //    }
-//  const unsigned long long td_size = trailer.data_size();
-//  if( td_size != data_size )
+//
+////  const unsigned td_crc = trailer.data_crc();
+////  if( td_crc != crc() )
+////    {
+////    error = true;
+////    if( verbosity >= 0 )
+////      {
+////      pp();
+////      std::fprintf( stderr, "CRC mismatch; stored %08X, computed %08X\n",
+////                    td_crc, crc() );
+////      }
+////    }
+////  const unsigned long long td_size = trailer.data_size();
+////  if( td_size != data_size )
+////    {
+////    error = true;
+////    if( verbosity >= 0 )
+////      {
+////      pp();
+////      std::fprintf( stderr, "Data size mismatch; stored %llu (0x%llX), computed %llu (0x%llX)\n",
+////                    td_size, td_size, data_size, data_size );
+////      }
+////    }
+////  const unsigned long long tm_size = trailer.member_size();
+////  if( tm_size != member_size )
+////    {
+////    error = true;
+////    if( verbosity >= 0 )
+////      {
+////      pp();
+////      std::fprintf( stderr, "Member size mismatch; stored %llu (0x%llX), computed %llu (0x%llX)\n",
+////                    tm_size, tm_size, member_size, member_size );
+////      }
+////    }
+//  if( error ) return false;
+//  if( verbosity >= 2 )
 //    {
-//    error = true;
-//    if( verbosity >= 0 )
-//      {
-//      pp();
-//      std::fprintf( stderr, "Data size mismatch; stored %llu (0x%llX), computed %llu (0x%llX)\n",
-//                    td_size, td_size, data_size, data_size );
-//      }
+//    if( verbosity >= 4 ) show_header( dictionary_size );
+//    if( data_size == 0 || member_size == 0 )
+//      std::fputs( "no data compressed. ", stderr );
+//    else
+//      std::fprintf( stderr, "%6.3f:1, %5.2f%% ratio, %5.2f%% saved. ",
+//                    (double)data_size / member_size,
+//                    ( 100.0 * member_size ) / data_size,
+//                    100.0 - ( ( 100.0 * member_size ) / data_size ) );
+////    if( verbosity >= 4 ) std::fprintf( stderr, "CRC %08X, ", td_crc );
+//    if( verbosity >= 3 )
+//      std::fprintf( stderr, "%9llu out, %8llu in. ", data_size, member_size );
 //    }
-//  const unsigned long long tm_size = trailer.member_size();
-//  if( tm_size != member_size )
-//    {
-//    error = true;
-//    if( verbosity >= 0 )
-//      {
-//      pp();
-//      std::fprintf( stderr, "Member size mismatch; stored %llu (0x%llX), computed %llu (0x%llX)\n",
-//                    tm_size, tm_size, member_size, member_size );
-//      }
-//    }
-  if( error ) return false;
-  if( verbosity >= 2 )
-    {
-    if( verbosity >= 4 ) show_header( dictionary_size );
-    if( data_size == 0 || member_size == 0 )
-      std::fputs( "no data compressed. ", stderr );
-    else
-      std::fprintf( stderr, "%6.3f:1, %5.2f%% ratio, %5.2f%% saved. ",
-                    (double)data_size / member_size,
-                    ( 100.0 * member_size ) / data_size,
-                    100.0 - ( ( 100.0 * member_size ) / data_size ) );
-//    if( verbosity >= 4 ) std::fprintf( stderr, "CRC %08X, ", td_crc );
-    if( verbosity >= 3 )
-      std::fprintf( stderr, "%9llu out, %8llu in. ", data_size, member_size );
-    }
-  return true;
-  }
+//  return true;
+//  }
 
 
 /* Return value: 0 = OK, 1 = decoder error, 2 = unexpected EOF,
                  3 = trailer error, 4 = unknown marker found. */
-int LZ_decoder::decode_member( const Pretty_print & pp )
+int LZ_decoder::decode_member()
   {
   Bit_model bm_literal[1<<literal_context_bits][0x300];
   Bit_model bm_match[State::states][pos_states];
@@ -258,17 +278,18 @@ int LZ_decoder::decode_member( const Pretty_print & pp )
             flush_data();
             if( len == min_match_len )		// End Of Stream marker
               {
-              if( verify_trailer( pp ) ) return 0; else return 3;
+//              if( verify_trailer( pp ) ) return 0; else return 3;
+                return 0;
               }
             if( len == min_match_len + 1 )	// Sync Flush marker
               {
               rdec.load(); continue;
               }
-            if( verbosity >= 0 )
-              {
-              pp();
+//            if( verbosity >= 0 )
+//              {
+//              pp();
               std::fprintf( stderr, "Unsupported marker code '%d'\n", len );
-              }
+//              }
             return 4;
             }
           }
