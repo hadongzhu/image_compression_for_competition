@@ -36,9 +36,9 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
 	uint8_t tempStream[64 * 4 * 4];
 	int32_t tempStreamLength;
 
-    charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
-//	charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
-//	lzipCompress(tempStream, tempStreamLength, pTile, pTileSize);
+//    charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
+	charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
+	lzipCompress(tempStream, tempStreamLength, pTile, pTileSize);
 
     //lzipCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
 	return 0;
@@ -60,10 +60,10 @@ int tile2argb(const unsigned char* pTile, int nTileSize, unsigned char* pClrBlk)
 	uint8_t tempStream[64 * 4 * 4];
 	int32_t tempStreamLength;
 
-    charlsDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
+//    charlsDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
 
-//	lzipDecompress(pTile, nTileSize, tempStream, &tempStreamLength);
-//	charlsDecompress(tempStream, tempStreamLength, (unsigned char*)pClrBlk, &nClrBlkSize);
+	lzipDecompress(pTile, nTileSize, tempStream, &tempStreamLength);
+	charlsDecompress(tempStream, tempStreamLength, (unsigned char*)pClrBlk, &nClrBlkSize);
 
     //lzipDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
 	return 0;
