@@ -1,0 +1,2 @@
+#pragma code_page(65001)
+1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "D:/work/image_compression_for_competition/cmake-build-debug---msvc/CMakeFiles/image_compression_for_competition.dir/embed.manifest"

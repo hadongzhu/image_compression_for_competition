@@ -1,0 +1,23 @@
+# ninja log v5
+7	87	7067686638632052	CMakeFiles/image_compression_for_competition.dir/src/rgbTileProc.cpp.obj	26af0d26190ea861
+632	1150	7067686649253728	CMakeFiles/image_compression_for_competition.dir/charls/src/quantization_lut.cpp.obj	deaaed13a6486be4
+88	632	7067686643950797	CMakeFiles/image_compression_for_competition.dir/charls/src/jpegls_error.cpp.obj	a52bcd4fc177e716
+14	246	7067686640200757	CMakeFiles/image_compression_for_competition.dir/src/test.cpp.obj	52f345ddd19503ab
+0	660	7067686644341471	CMakeFiles/image_compression_for_competition.dir/src/charlsWapper.cpp.obj	2fa62b9910f58e74
+27	795	7067686645688762	CMakeFiles/image_compression_for_competition.dir/charls/src/jpeg_stream_writer.cpp.obj	7c6951d184c7f410
+246	758	7067686645328144	CMakeFiles/image_compression_for_competition.dir/charls/src/version.cpp.obj	2339abb7613cf549
+17	801	7067686645733964	CMakeFiles/image_compression_for_competition.dir/charls/src/golomb_lut.cpp.obj	2ea234dff95a4f2c
+4	781	7067686645523540	CMakeFiles/image_compression_for_competition.dir/src/lzipWapper.cpp.obj	14ea94bb2710d8bb
+21	806	7067686645809019	CMakeFiles/image_compression_for_competition.dir/charls/src/jpeg_stream_reader.cpp.obj	fcb2d178fa900452
+24	839	7067686646114569	CMakeFiles/image_compression_for_competition.dir/charls/src/charls_jpegls_encoder.cpp.obj	2fddbae2106da9e1
+11	1075	7067686648496022	CMakeFiles/image_compression_for_competition.dir/charls/src/charls_jpegls_decoder.cpp.obj	54842fe4a90d47a6
+782	1241	7067686650181810	CMakeFiles/image_compression_for_competition.dir/lzip/encoder_base.cpp.obj	75629343c1137ce9
+661	1085	7067686648591218	CMakeFiles/image_compression_for_competition.dir/charls/src/validate_spiff_header.cpp.obj	9552b7a7e33a7597
+801	1234	7067686650106684	CMakeFiles/image_compression_for_competition.dir/lzip/decoder.cpp.obj	56175bb7846ddafe
+796	1251	7067686650276896	CMakeFiles/image_compression_for_competition.dir/lzip/encoder.cpp.obj	7bd4dd31acd54822
+758	1708	7067686654828695	CMakeFiles/image_compression_for_competition.dir/charls/src/scan_codec_factory.cpp.obj	30676fb1ad6599ee
+1708	2053	7067686658176797	image_compression_for_competition.exe	ae4b1917a12f53a8
+0	584	7067687028727960	CMakeFiles/image_compression_for_competition.dir/src/main.cpp.obj	333421e93daa0d67
+584	774	7067687030360826	image_compression_for_competition.exe	71a3a70b250dd51e
+0	134	7067692595560052	CMakeFiles/image_compression_for_competition.dir/src/rgbTileProc.cpp.obj	26af0d26190ea861
+134	237	7067692596321516	image_compression_for_competition.exe	71a3a70b250dd51e

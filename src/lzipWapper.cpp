@@ -4,6 +4,9 @@
 #include "encoder_base.h"
 #include "encoder.h"
 
+#include "charls.h"
+
+
 struct Lzma_options
 {
     int dictionary_size; // 4 KiB .. 512 MiB
