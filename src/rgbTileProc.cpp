@@ -8,7 +8,7 @@
 #include "rgbTileProc.h"
 
 //#include "lzipWapper.h"
-//#include "charlsWapper.h"
+#include "charlsWapper.h"
 
 #include "compressAlgorithm.h"
 
@@ -43,6 +43,21 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
 //	lzipCompress(tempStream, tempStreamLength, pTile, pTileSize);
 
     //lzipCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
+
+
+//    charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
+//    if(tempStreamLength < g_nTileWidth * g_nTileHeight * 4)
+//    {
+//        *pTileSize = tempStreamLength;
+//        memcpy(pTile, tempStream, *pTileSize);
+//    }
+//    else
+//    {
+//        *pTileSize = g_nTileWidth * g_nTileHeight * 4;
+//        memcpy(pTile, pClrBlk, *pTileSize);
+//    }
+
+
 
     int32_t minSize = g_nTileWidth * g_nTileHeight * 4 - 1;
     uint8_t minType = 0;
@@ -91,6 +106,22 @@ int tile2argb(const unsigned char* pTile, int nTileSize, unsigned char* pClrBlk)
 
 //	lzipDecompress(pTile, nTileSize, tempStream, &tempStreamLength);
 //	charlsDecompress(tempStream, tempStreamLength, (unsigned char*)pClrBlk, &nClrBlkSize);
+
+//lzipDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
+
+
+//    if(nTileSize >= 256)
+//    {
+//        memcpy(pClrBlk, pTile, nTileSize);
+//    }
+//    else
+//    {
+//        charlsDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
+//    }
+
+
+
+
     uint8_t type = *pTile;
     if(nTileSize >= 256)
     {
@@ -100,7 +131,5 @@ int tile2argb(const unsigned char* pTile, int nTileSize, unsigned char* pClrBlk)
     {
         algorithmTable[type].decompress(pTile + 1, nTileSize - 1, (unsigned char*)pClrBlk, &nClrBlkSize);
     }
-
-    //lzipDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
 	return 0;
 }
