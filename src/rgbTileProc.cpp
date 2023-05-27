@@ -35,8 +35,8 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
 	assert(g_nTileWidth > 0 && g_nTileHeight > 0);
 //	*pTileSize = g_nTileWidth * g_nTileHeight * 4;
 //	memcpy(pTile, pClrBlk, *pTileSize);
-//	uint8_t tempStream[64 * 4 * 4];
-//	int32_t tempStreamLength;
+	uint8_t tempStream[64 * 4 * 4 * 2];
+	int32_t tempStreamLength;
 
 //    charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
 //	charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
@@ -48,13 +48,13 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
     uint8_t minType = 0;
     for(uint8_t type = 1; type < 5; type++)
     {
-        algorithmTable[type].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
-        if(*pTileSize < minSize)
+        algorithmTable[type].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
+        if(tempStreamLength < minSize)
         {
-            minSize = *pTileSize;
+            minSize = tempStreamLength;
             minType = type;
         }
-        printf("type = %d, size = %d\n", type, *pTileSize);
+        printf("%3d,", tempStreamLength);
     }
     if(minType == 0)
     {
@@ -67,8 +67,7 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
         algorithmTable[minType].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile + 1, pTileSize);
         *pTileSize += 1;
     }
-    printf("minType = %d, minSize = %d\n", minType, minSize);
-
+    printf("%2d,%3d\n", minType, minSize);
 	return 0;
 }
 
@@ -93,7 +92,7 @@ int tile2argb(const unsigned char* pTile, int nTileSize, unsigned char* pClrBlk)
 //	lzipDecompress(pTile, nTileSize, tempStream, &tempStreamLength);
 //	charlsDecompress(tempStream, tempStreamLength, (unsigned char*)pClrBlk, &nClrBlkSize);
     uint8_t type = *pTile;
-    if(nTileSize >= 256 - 1)
+    if(nTileSize >= 256)
     {
         memcpy(pClrBlk, pTile, nTileSize);
     }
