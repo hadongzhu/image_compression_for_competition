@@ -1,7 +1,8 @@
 **/.idea/
 **/.vscode/
-**/cmake-build-debug/
 **/.vs/
 **/out/
 **/build/
 **/cmake-build-*/
+/res/**
+!/res/sample??.bmp
