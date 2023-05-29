@@ -2,6 +2,7 @@
 #include "lzipWapper.h"
 #include "charlsWapper.h"
 #include "compressAlgorithm.h"
+#include "YUVConvert.h"
 
 void charlsAndLzipCompress(const uint8_t *inputStream, const int32_t inputStreamLength,
                     uint8_t *outputStream, int32_t *outputStreamLength)
@@ -42,10 +43,48 @@ void blankDecompress(const uint8_t *inputStream, const int32_t inputStreamLength
     memset(outputStream, 0x00, *outputStreamLength);
 }
 
+void charlsAndYUVCompress(const uint8_t *inputStream, const int32_t inputStreamLength,
+                           uint8_t *outputStream, int32_t *outputStreamLength)
+{
+    uint8_t tempStream[64 * 4 * 4 * 2];
+    int32_t tempStreamLength;
+    BGRA2VUYA(inputStream, inputStreamLength, tempStream, &tempStreamLength);
+    charlsCompress(tempStream, tempStreamLength, outputStream, outputStreamLength);
+}
+
+void charlsAndYUVDecompress(const uint8_t *inputStream, const int32_t inputStreamLength,
+                          uint8_t *outputStream, int32_t *outputStreamLength)
+{
+    uint8_t tempStream[64 * 4 * 4 * 2];
+    int32_t tempStreamLength;
+    charlsDecompress(inputStream, inputStreamLength, tempStream, &tempStreamLength);
+    VUYA2BGRA(tempStream, tempStreamLength, outputStream, outputStreamLength);
+}
+
+void charlsAndColor1Compress(const uint8_t *inputStream, const int32_t inputStreamLength,
+                          uint8_t *outputStream, int32_t *outputStreamLength)
+{
+    uint8_t tempStream[64 * 4 * 4 * 2];
+    int32_t tempStreamLength;
+    BGRAToColor1(inputStream, inputStreamLength, tempStream, &tempStreamLength);
+    charlsCompress(tempStream, tempStreamLength, outputStream, outputStreamLength);
+}
+
+void charlsAndColor1Decompress(const uint8_t *inputStream, const int32_t inputStreamLength,
+                            uint8_t *outputStream, int32_t *outputStreamLength)
+{
+    uint8_t tempStream[64 * 4 * 4 * 2];
+    int32_t tempStreamLength;
+    charlsDecompress(inputStream, inputStreamLength, tempStream, &tempStreamLength);
+    color1ToBGRA(tempStream, tempStreamLength, outputStream, outputStreamLength);
+}
+
 algorithmTypeDef algorithmTable[] = {
-            {0x00, NULL, NULL},
-            {0x01, charlsCompress, charlsDecompress},
-            {0x02, lzipCompress, lzipDecompress},
-            {0x03, charlsAndLzipCompress, charlsAndLzipDecompress},
-            {0x04, blankCompress, blankDecompress},
+            {NULL, NULL},
+            {charlsCompress, charlsDecompress},
+            {lzipCompress, lzipDecompress},
+//            {charlsAndLzipCompress, charlsAndLzipDecompress},
+            {blankCompress, blankDecompress},
+            {charlsAndYUVCompress, charlsAndYUVDecompress},
+            {charlsAndColor1Compress, charlsAndColor1Decompress}
 };

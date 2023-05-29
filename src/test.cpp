@@ -1,7 +1,9 @@
+#include <cstdlib>
 #include "lzipWapper.h"
 #include "charlsWapper.h"
 #include "string.h"
 #include "stdio.h"
+#include "YUVConvert.h"
 
 int main()
 {
@@ -12,13 +14,22 @@ int main()
     uint8_t decompressdStream[64 * 4 * 4] = {0};
     int32_t compressedStreamLength;
     int32_t decompressdStreamLength;
-    charlsCompress(rawStream, 64 * 4, charlsStream, &charlsStreamLength);
-    //lzipCompress(rawStream, 64 * 4, compressedStream, &compressedStreamLength);
-    lzipCompress(charlsStream, charlsStreamLength, compressedStream, &compressedStreamLength);
+//    charlsCompress(rawStream, 64 * 4, charlsStream, &charlsStreamLength);
+//    //lzipCompress(rawStream, 64 * 4, compressedStream, &compressedStreamLength);
+//    lzipCompress(charlsStream, charlsStreamLength, compressedStream, &compressedStreamLength);
+//
+//    //lzipDecompress(compressedStream, compressedStreamLength, decompressdStream, &decompressdStreamLength);
+//    lzipDecompress(compressedStream, compressedStreamLength, charlsStream, &charlsStreamLength);
+//    charlsDecompress(charlsStream, charlsStreamLength, decompressdStream, &decompressdStreamLength);
 
-    //lzipDecompress(compressedStream, compressedStreamLength, decompressdStream, &decompressdStreamLength);
-    lzipDecompress(compressedStream, compressedStreamLength, charlsStream, &charlsStreamLength);
-    charlsDecompress(charlsStream, charlsStreamLength, decompressdStream, &decompressdStreamLength);
+    //ramdom data rawStream
+    for(int i = 0; i < 64 * 4; i++)
+    {
+        rawStream[i] = rand() % 256;
+    }
+
+    BGRAToColor2(rawStream, 64 * 4, compressedStream, &compressedStreamLength);
+    color2ToBGRA(compressedStream, compressedStreamLength, decompressdStream, &decompressdStreamLength);
 
     if(memcmp(rawStream, decompressdStream, 64 * 4) == 0 && decompressdStreamLength == 64 * 4)
     {

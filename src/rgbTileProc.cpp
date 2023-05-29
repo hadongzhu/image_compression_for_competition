@@ -9,6 +9,7 @@
 
 //#include "lzipWapper.h"
 #include "charlsWapper.h"
+#include "YUVConvert.h"
 
 #include "compressAlgorithm.h"
 
@@ -61,7 +62,7 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
 
     int32_t minSize = g_nTileWidth * g_nTileHeight * 4 - 1;
     uint8_t minType = 0;
-    for(uint8_t type = 1; type < 5; type++)
+    for(uint8_t type = 1; type < 6; type++)
     {
         algorithmTable[type].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
         if(tempStreamLength < minSize)
@@ -83,6 +84,9 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
         *pTileSize += 1;
     }
     printf("%2d,%3d\n", minType, minSize);
+
+//    BGRAToColor2(pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
+//    charlsCompress(tempStream, tempStreamLength, pTile, pTileSize);
 	return 0;
 }
 
@@ -99,8 +103,8 @@ int tile2argb(const unsigned char* pTile, int nTileSize, unsigned char* pClrBlk)
 {
 //	memcpy(pClrBlk, pTile, nTileSize);
     int32_t nClrBlkSize;
-//	uint8_t tempStream[64 * 4 * 4];
-//	int32_t tempStreamLength;
+	uint8_t tempStream[64 * 4 * 4];
+	int32_t tempStreamLength;
 
 //    charlsDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
 
@@ -131,5 +135,9 @@ int tile2argb(const unsigned char* pTile, int nTileSize, unsigned char* pClrBlk)
     {
         algorithmTable[type].decompress(pTile + 1, nTileSize - 1, (unsigned char*)pClrBlk, &nClrBlkSize);
     }
+
+//    charlsDecompress(pTile, nTileSize, tempStream, &tempStreamLength);
+//    color2ToBGRA(tempStream, tempStreamLength, pClrBlk, &nClrBlkSize);
+
 	return 0;
 }

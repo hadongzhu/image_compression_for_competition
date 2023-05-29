@@ -10,7 +10,6 @@ extern "C"
 #include "stdbool.h"
 
 typedef struct {
-    uint8_t ID;
     void (*compress)(const uint8_t *inputStream, const int32_t inputStreamLength,
                      uint8_t *outputStream, int32_t *outputStreamLength);
     void (*decompress)(const uint8_t *inputStream, const int32_t inputStreamLength,

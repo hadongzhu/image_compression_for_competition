@@ -474,7 +474,7 @@ enum class encoding_options : unsigned
 
     /// <summary>
     /// Writes explicitly the default JPEG-LS preset coding parameters when the
-    /// bits per sample is larger then 12 bits.
+    /// 1
     /// The Java Advanced Imaging (JAI) JPEG-LS codec has a defect that causes it to use invalid
     /// preset coding parameters for these types of images.
     /// Most users of this codec are aware of this problem and have implemented a work-around.
