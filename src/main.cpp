@@ -283,8 +283,11 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[1], "--version") == 0) {
         std::cout << USAGE << std::endl;
         // !!! REPLACE THE NAME TO YOUR TEAM'S
-        std::cout << "made by: xxx (for example: Jingjia Electronics Co.,ltd)" << std::endl;
-        std::cout << "version: " << APP_VERSION << std::endl;
+//        std::cout << "made by: xxx (for example: Jingjia Electronics Co.,ltd)" << std::endl;
+//        std::cout << "version: " << APP_VERSION << std::endl;
+        std::cout << "made by: Wan Jifeng, Chen Du, Liu Bing" << std::endl;
+        std::cout << "version: 20" << std::endl;
+        std::cout << "built-in algorithm: 1-7" << std::endl;
         return ERROR_PARAM_NOT_ENOUGH;
     }
     else if (strcmp(argv[1], "-en") == 0) {

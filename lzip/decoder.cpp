@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
-#include <io.h>
+//#include <io.h>
 
 #include "lzip.h"
 #include "decoder.h"
