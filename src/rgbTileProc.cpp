@@ -36,7 +36,7 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
 	assert(g_nTileWidth > 0 && g_nTileHeight > 0);
 //	*pTileSize = g_nTileWidth * g_nTileHeight * 4;
 //	memcpy(pTile, pClrBlk, *pTileSize);
-	uint8_t tempStream[64 * 4 * 4 * 2];
+	uint8_t tempStream[6][64 * 4 * 4 * 2];
 	int32_t tempStreamLength;
 
 //    charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
@@ -61,7 +61,7 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
      uint8_t minType = 0;
      for(uint8_t type = 1; type < 7; type++)
      {
-         algorithmTable[type].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
+         algorithmTable[type].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream[type - 1], &tempStreamLength);
          if(tempStreamLength < minSize)
          {
              minSize = tempStreamLength;
@@ -77,8 +77,9 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
      else
      {
          *pTile = minType;
-         algorithmTable[minType].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile + 1, pTileSize);
-         *pTileSize += 1;
+//         algorithmTable[minType].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile + 1, pTileSize);
+         memcpy(pTile + 1, tempStream[minType - 1], minSize);
+         *pTileSize = minSize + 1;
      }
      printf("%2d,%3d\n", minType, minSize);
 
