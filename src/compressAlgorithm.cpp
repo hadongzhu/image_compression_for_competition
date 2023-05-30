@@ -79,6 +79,24 @@ void charlsAndColor1Decompress(const uint8_t *inputStream, const int32_t inputSt
     color1ToBGRA(tempStream, tempStreamLength, outputStream, outputStreamLength);
 }
 
+void charlsAndColor2Compress(const uint8_t *inputStream, const int32_t inputStreamLength,
+                             uint8_t *outputStream, int32_t *outputStreamLength)
+{
+    uint8_t tempStream[64 * 4 * 4 * 2];
+    int32_t tempStreamLength;
+    BGRAToColor2(inputStream, inputStreamLength, tempStream, &tempStreamLength);
+    charlsCompress(tempStream, tempStreamLength, outputStream, outputStreamLength);
+}
+
+void charlsAndColor2Decompress(const uint8_t *inputStream, const int32_t inputStreamLength,
+                               uint8_t *outputStream, int32_t *outputStreamLength)
+{
+    uint8_t tempStream[64 * 4 * 4 * 2];
+    int32_t tempStreamLength;
+    charlsDecompress(inputStream, inputStreamLength, tempStream, &tempStreamLength);
+    color2ToBGRA(tempStream, tempStreamLength, outputStream, outputStreamLength);
+}
+
 algorithmTypeDef algorithmTable[] = {
             {NULL, NULL},
             {charlsCompress, charlsDecompress},
@@ -86,5 +104,6 @@ algorithmTypeDef algorithmTable[] = {
 //            {charlsAndLzipCompress, charlsAndLzipDecompress},
             {blankCompress, blankDecompress},
             {charlsAndYUVCompress, charlsAndYUVDecompress},
-            {charlsAndColor1Compress, charlsAndColor1Decompress}
+            {charlsAndColor1Compress, charlsAndColor1Decompress},
+            {charlsAndColor2Compress, charlsAndColor2Decompress}
 };

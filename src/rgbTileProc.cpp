@@ -7,7 +7,7 @@
 #include <assert.h>
 #include "rgbTileProc.h"
 
-//#include "lzipWapper.h"
+#include "lzipWapper.h"
 #include "charlsWapper.h"
 #include "YUVConvert.h"
 
@@ -43,47 +43,44 @@ int argb2tile(const unsigned char* pClrBlk, unsigned char* pTile, int* pTileSize
 //	charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
 //	lzipCompress(tempStream, tempStreamLength, pTile, pTileSize);
 
-    //lzipCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
+    // lzipCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile, pTileSize);
 
+//   lzipCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
+//   if(tempStreamLength < g_nTileWidth * g_nTileHeight * 4)
+//   {
+//       *pTileSize = tempStreamLength;
+//       memcpy(pTile, tempStream, *pTileSize);
+//   }
+//   else
+//   {
+//       *pTileSize = g_nTileWidth * g_nTileHeight * 4;
+//       memcpy(pTile, pClrBlk, *pTileSize);
+//   }
 
-//    charlsCompress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
-//    if(tempStreamLength < g_nTileWidth * g_nTileHeight * 4)
-//    {
-//        *pTileSize = tempStreamLength;
-//        memcpy(pTile, tempStream, *pTileSize);
-//    }
-//    else
-//    {
-//        *pTileSize = g_nTileWidth * g_nTileHeight * 4;
-//        memcpy(pTile, pClrBlk, *pTileSize);
-//    }
-
-
-
-    int32_t minSize = g_nTileWidth * g_nTileHeight * 4 - 1;
-    uint8_t minType = 0;
-    for(uint8_t type = 1; type < 6; type++)
-    {
-        algorithmTable[type].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
-        if(tempStreamLength < minSize)
-        {
-            minSize = tempStreamLength;
-            minType = type;
-        }
-        printf("%3d,", tempStreamLength);
-    }
-    if(minType == 0)
-    {
-        *pTileSize = g_nTileWidth * g_nTileHeight * 4;
-	    memcpy(pTile, pClrBlk, *pTileSize);
-    }
-    else
-    {
-        *pTile = minType;
-        algorithmTable[minType].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile + 1, pTileSize);
-        *pTileSize += 1;
-    }
-    printf("%2d,%3d\n", minType, minSize);
+     int32_t minSize = g_nTileWidth * g_nTileHeight * 4 - 1;
+     uint8_t minType = 0;
+     for(uint8_t type = 1; type < 7; type++)
+     {
+         algorithmTable[type].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
+         if(tempStreamLength < minSize)
+         {
+             minSize = tempStreamLength;
+             minType = type;
+         }
+         printf("%3d,", tempStreamLength);
+     }
+     if(minType == 0)
+     {
+         *pTileSize = g_nTileWidth * g_nTileHeight * 4;
+	     memcpy(pTile, pClrBlk, *pTileSize);
+     }
+     else
+     {
+         *pTile = minType;
+         algorithmTable[minType].compress((unsigned char*)pClrBlk, g_nTileWidth * g_nTileHeight * 4, pTile + 1, pTileSize);
+         *pTileSize += 1;
+     }
+     printf("%2d,%3d\n", minType, minSize);
 
 //    BGRAToColor2(pClrBlk, g_nTileWidth * g_nTileHeight * 4, tempStream, &tempStreamLength);
 //    charlsCompress(tempStream, tempStreamLength, pTile, pTileSize);
@@ -114,27 +111,24 @@ int tile2argb(const unsigned char* pTile, int nTileSize, unsigned char* pClrBlk)
 //lzipDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
 
 
-//    if(nTileSize >= 256)
-//    {
-//        memcpy(pClrBlk, pTile, nTileSize);
-//    }
-//    else
-//    {
-//        charlsDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
-//    }
+//   if(nTileSize >= 256)
+//   {
+//       memcpy(pClrBlk, pTile, nTileSize);
+//   }
+//   else
+//   {
+//       lzipDecompress((unsigned char*)pTile, nTileSize, pClrBlk, &nClrBlkSize);
+//   }
 
-
-
-
-    uint8_t type = *pTile;
-    if(nTileSize >= 256)
-    {
-        memcpy(pClrBlk, pTile, nTileSize);
-    }
-    else
-    {
-        algorithmTable[type].decompress(pTile + 1, nTileSize - 1, (unsigned char*)pClrBlk, &nClrBlkSize);
-    }
+     uint8_t type = *pTile;
+     if(nTileSize >= 256)
+     {
+         memcpy(pClrBlk, pTile, nTileSize);
+     }
+     else
+     {
+         algorithmTable[type].decompress(pTile + 1, nTileSize - 1, (unsigned char*)pClrBlk, &nClrBlkSize);
+     }
 
 //    charlsDecompress(pTile, nTileSize, tempStream, &tempStreamLength);
 //    color2ToBGRA(tempStream, tempStreamLength, pClrBlk, &nClrBlkSize);
